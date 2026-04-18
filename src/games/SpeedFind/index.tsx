@@ -8,6 +8,7 @@ import { shuffle } from '../../lib/shuffle';
 import { useUser } from '../../lib/user-context';
 import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
 import { TEXTS, parseBody, type SpeedFindText, type SpeedFindKind } from '../../content/speedfind';
+import { GAME_BG } from '../../lib/game-bg';
 
 const SCORES_KEY = 'speedfind:scoreboard';
 const ROUND_MS = 30_000;
@@ -144,7 +145,7 @@ export default function SpeedFind() {
   // ---------- render ----------
   if (phase === 'intro') {
     return (
-      <GameShell title="Speed Find" titleJa="スピード・サーチ">
+      <GameShell title="Speed Find" titleJa="スピード・サーチ" bg={GAME_BG.speedfind}>
         <p className="text-lg text-slate-700">
           Read a menu, email, flyer, or card. <b>Tap the word</b> that answers the question.
         </p>
@@ -171,7 +172,7 @@ export default function SpeedFind() {
   if (!entry) return null;
 
   return (
-    <GameShell title="Speed Find" titleJa="スピード・サーチ">
+    <GameShell title="Speed Find" titleJa="スピード・サーチ" bg={GAME_BG.speedfind}>
       <HUD score={score} timeLeft={timeLeft} total={order.length} idx={orderIdx} />
       <Question entry={entry} />
       <TextCard
@@ -296,7 +297,7 @@ function Results({
   const newBest = madeBoard && score === topScore;
   const attempted = log.length;
   return (
-    <GameShell title="Speed Find" titleJa="スピード・サーチ">
+    <GameShell title="Speed Find" titleJa="スピード・サーチ" bg={GAME_BG.speedfind}>
       <div ref={ref} className={`mt-2 rounded-2xl border p-5 ${newBest ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
         <p className="text-2xl font-bold">
           {newBest ? 'New best!' : "Time's up"} <span className="text-slate-700 font-semibold">— {score} correct</span>

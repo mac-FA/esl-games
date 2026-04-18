@@ -9,6 +9,7 @@ import { loadJSON, saveJSON, removeKey } from '../../lib/storage';
 import { shuffle } from '../../lib/shuffle';
 import { useUser } from '../../lib/user-context';
 import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
+import { GAME_BG } from '../../lib/game-bg';
 import { ITEMS, ROUND_SIZE, type CheckoutItem } from '../../content/checkout';
 
 const RESUME_KEY = 'checkout:state';
@@ -143,7 +144,7 @@ export default function SupermarketCheckout() {
   // ---------------- render ----------------
   if (phase === 'intro') {
     return (
-      <GameShell title="Supermarket Checkout" titleJa="スーパーのレジ">
+      <GameShell title="Supermarket Checkout" titleJa="スーパーのレジ" bg={GAME_BG.checkout}>
         <p className="text-lg text-slate-700">
           Two phases: sort each item as <b>countable</b> or <b>uncountable</b>, then ask the shopkeeper with <b>How much</b> or <b>How many</b>.
         </p>
@@ -158,7 +159,7 @@ export default function SupermarketCheckout() {
 
   if (phase === 'resume') {
     return (
-      <GameShell title="Supermarket Checkout" titleJa="スーパーのレジ">
+      <GameShell title="Supermarket Checkout" titleJa="スーパーのレジ" bg={GAME_BG.checkout}>
         <p className="text-lg text-slate-700">You have a round in progress.</p>
         <HintText ja="途中のゲームがあります。続けますか？" />
         <div className="flex gap-3 mt-6 flex-wrap">
@@ -178,7 +179,7 @@ export default function SupermarketCheckout() {
     const questionHits = questionAnswers.filter((x) => x.correct).length;
     const total = sortedHits + questionHits;
     return (
-      <GameShell title="Supermarket Checkout" titleJa="スーパーのレジ">
+      <GameShell title="Supermarket Checkout" titleJa="スーパーのレジ" bg={GAME_BG.checkout}>
         <div className="rounded-2xl bg-white border border-slate-200 p-6 text-center shadow-sm">
           <p className="text-sm uppercase tracking-wider text-slate-500">Round complete</p>
           <p className="text-5xl font-bold mt-2">
@@ -207,7 +208,7 @@ export default function SupermarketCheckout() {
   const progressTotal = ROUND_SIZE * 2;
 
   return (
-    <GameShell title="Supermarket Checkout" titleJa="スーパーのレジ">
+    <GameShell title="Supermarket Checkout" titleJa="スーパーのレジ" bg={GAME_BG.checkout}>
       <ScoreBar
         score={currentScore}
         progress={{ current: progressCurrent, total: progressTotal }}

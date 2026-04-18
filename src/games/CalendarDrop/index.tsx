@@ -8,6 +8,7 @@ import { shuffle } from '../../lib/shuffle';
 import { useUser } from '../../lib/user-context';
 import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
 import { ITEMS, type CalendarItem, type CalendarPrep } from '../../content/calendar';
+import { GAME_BG } from '../../lib/game-bg';
 
 const SCORES_KEY = 'calendar:scoreboard';
 const ROUND_MS = 60_000;
@@ -198,7 +199,7 @@ export default function CalendarDrop() {
   // ---------- render ----------
   if (phase === 'intro') {
     return (
-      <GameShell title="Calendar Drop" titleJa="カレンダー・ドロップ">
+      <GameShell title="Calendar Drop" titleJa="カレンダー・ドロップ" bg={GAME_BG.calendar}>
         <p className="text-lg text-slate-700">
           Time expressions fall from the top. Tap <b>in</b>, <b>on</b>, or <b>at</b> before they land.
         </p>
@@ -227,7 +228,7 @@ export default function CalendarDrop() {
   const timeFrac = timeLeft / ROUND_MS;
 
   return (
-    <GameShell title="Calendar Drop" titleJa="カレンダー・ドロップ">
+    <GameShell title="Calendar Drop" titleJa="カレンダー・ドロップ" bg={GAME_BG.calendar}>
       {/* HUD */}
       <div className="mt-1 flex items-center justify-between gap-2 text-sm">
         <div className="flex items-center gap-3">
@@ -352,7 +353,7 @@ function Results({
   const newBest = madeBoard && score === topScore;
 
   return (
-    <GameShell title="Calendar Drop" titleJa="カレンダー・ドロップ">
+    <GameShell title="Calendar Drop" titleJa="カレンダー・ドロップ" bg={GAME_BG.calendar}>
       <div ref={ref} className={`mt-2 rounded-2xl border p-5 ${newBest ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
         <p className="text-2xl font-bold">
           {newBest ? 'New best!' : 'Round over'}{' '}

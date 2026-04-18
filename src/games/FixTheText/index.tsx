@@ -9,6 +9,7 @@ import { shuffle } from '../../lib/shuffle';
 import { useUser } from '../../lib/user-context';
 import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
 import { TEXTS, parseParagraph, applyCase, type FixTextEntry } from '../../content/fixtext';
+import { GAME_BG } from '../../lib/game-bg';
 
 const RESUME_KEY = 'fixtext:state';
 const SCORES_KEY = 'fixtext:scoreboard';
@@ -123,7 +124,7 @@ export default function FixTheText() {
   // ---------------- render ----------------
   if (phase === 'intro') {
     return (
-      <GameShell title="Fix the Text" titleJa="文章を直そう">
+      <GameShell title="Fix the Text" titleJa="文章を直そう" bg={GAME_BG.fixtext}>
         <p className="text-lg text-slate-700">
           Tap a word to capitalize its first letter. Tap a dot between words to add a period.
         </p>
@@ -139,7 +140,7 @@ export default function FixTheText() {
 
   if (phase === 'resume') {
     return (
-      <GameShell title="Fix the Text" titleJa="文章を直そう">
+      <GameShell title="Fix the Text" titleJa="文章を直そう" bg={GAME_BG.fixtext}>
         <p className="text-lg text-slate-700">You have a text in progress.</p>
         <HintText ja="途中の文章があります。続けますか？" />
         <div className="flex gap-3 mt-6 flex-wrap">
@@ -159,7 +160,7 @@ export default function FixTheText() {
   const pct = Math.round((100 * (correctCaps + correctPeriods)) / total);
 
   return (
-    <GameShell title="Fix the Text" titleJa="文章を直そう">
+    <GameShell title="Fix the Text" titleJa="文章を直そう" bg={GAME_BG.fixtext}>
       <div className="flex items-baseline justify-between">
         <p className="text-sm uppercase tracking-wider text-slate-500">{entry.title}</p>
         <p className="text-sm text-slate-400">{orderIdx + 1} / {order.length}</p>

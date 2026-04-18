@@ -4,6 +4,7 @@ import HintText from './components/HintText';
 import GameShell from './components/GameShell';
 import { useHints } from './lib/hint-context';
 import { useUser } from './lib/user-context';
+import { GAME_BG, type GameBgKey } from './lib/game-bg';
 import SentenceMashup from './games/SentenceMashup';
 import SupermarketCheckout from './games/SupermarketCheckout';
 import FixTheText from './games/FixTheText';
@@ -18,6 +19,9 @@ type GameMeta = {
   topic: string;
   topicJa: string;
   minutes: string;
+  bgKey: GameBgKey;
+  /** Card tilt in degrees — alternating left/right for a gallery feel. */
+  tilt: number;
 };
 
 const GAMES: GameMeta[] = [
@@ -29,6 +33,8 @@ const GAMES: GameMeta[] = [
     topic: 'Conjunctions: and / but / because / so',
     topicJa: '接続詞の練習',
     minutes: '3–5 min',
+    bgKey: 'mashup',
+    tilt: -2.5,
   },
   {
     path: '/checkout',
@@ -38,6 +44,8 @@ const GAMES: GameMeta[] = [
     topic: 'Countable / Uncountable · How much / How many',
     topicJa: '数えられる名詞と数えられない名詞',
     minutes: '4–5 min',
+    bgKey: 'checkout',
+    tilt: 2,
   },
   {
     path: '/fix-text',
@@ -47,6 +55,8 @@ const GAMES: GameMeta[] = [
     topic: 'Capital letters & full stops',
     topicJa: '大文字とピリオド',
     minutes: '3–4 min',
+    bgKey: 'fixtext',
+    tilt: 2.5,
   },
   {
     path: '/calendar-drop',
@@ -56,6 +66,8 @@ const GAMES: GameMeta[] = [
     topic: 'Prepositions of time: in / on / at',
     topicJa: '時を表す前置詞',
     minutes: '2–3 min',
+    bgKey: 'calendar',
+    tilt: -2,
   },
   {
     path: '/speed-find',
@@ -65,6 +77,8 @@ const GAMES: GameMeta[] = [
     topic: 'Scanning & skimming real-world texts',
     topicJa: 'スキャニング練習',
     minutes: '4–5 min',
+    bgKey: 'speedfind',
+    tilt: -1.5,
   },
 ];
 
@@ -93,12 +107,12 @@ function Home() {
         </div>
         <JapaneseHintToggle />
       </header>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-6 sm:gap-8 sm:grid-cols-2">
         {GAMES.map((g) => (
           <Link
             key={g.path}
             to={g.path}
-            className="block p-5 rounded-2xl bg-white shadow-sm border border-slate-200 active:scale-[0.98] transition hover:border-blue-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="block p-5 pb-6 rounded-2xl bg-white shadow-sm border border-slate-200 active:scale-[0.98] transition hover:border-blue-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             <div className="flex items-baseline justify-between gap-2">
               <h2 className="text-xl font-semibold">
@@ -110,6 +124,17 @@ function Home() {
             <p className="text-slate-700 mt-2">{g.topic}</p>
             {hintsOn && <p className="text-slate-500 text-sm mt-1">{g.topicJa}</p>}
             <p className="text-sm text-slate-500 mt-1">{g.minutes}</p>
+
+            {/* Angled "canvas" thumbnail — decorative only. */}
+            <div className="mt-4 flex justify-center" aria-hidden="true">
+              <div
+                className="w-36 h-24 sm:w-44 sm:h-28 rounded-md bg-center bg-cover shadow-lg ring-1 ring-slate-300/70 border-[3px] border-white"
+                style={{
+                  backgroundImage: `url('${GAME_BG[g.bgKey]}')`,
+                  transform: `rotate(${g.tilt}deg)`,
+                }}
+              />
+            </div>
           </Link>
         ))}
       </div>

@@ -7,10 +7,14 @@ import { UserProvider } from './lib/user-context';
 import { ToastProvider } from './components/Toast';
 import NameGate from './components/NameGate';
 import { clearLegacyBestKeys } from './lib/scoreboard';
+import { preloadGameBackgrounds } from './lib/game-bg';
 import './index.css';
 
 // One-time cleanup of pre-scoreboard `<game>:best` keys.
 clearLegacyBestKeys();
+
+// Kick off background image fetches ASAP so navigating to a game doesn't flash.
+preloadGameBackgrounds();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
