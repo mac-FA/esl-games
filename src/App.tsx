@@ -11,6 +11,7 @@ import SpeedFind from './games/SpeedFind';
 
 type GameMeta = {
   path: string;
+  icon: string;
   name: string;
   nameJa: string;
   topic: string;
@@ -21,6 +22,7 @@ type GameMeta = {
 const GAMES: GameMeta[] = [
   {
     path: '/mashup',
+    icon: '🔗',
     name: 'Sentence Mashup',
     nameJa: '文つなぎ',
     topic: 'Conjunctions: and / but / because / so',
@@ -29,6 +31,7 @@ const GAMES: GameMeta[] = [
   },
   {
     path: '/checkout',
+    icon: '🛒',
     name: 'Supermarket Checkout',
     nameJa: 'スーパーのレジ',
     topic: 'Countable / Uncountable · How much / How many',
@@ -37,6 +40,7 @@ const GAMES: GameMeta[] = [
   },
   {
     path: '/fix-text',
+    icon: '✏️',
     name: 'Fix the Text',
     nameJa: '文章を直そう',
     topic: 'Capital letters & full stops',
@@ -45,6 +49,7 @@ const GAMES: GameMeta[] = [
   },
   {
     path: '/calendar-drop',
+    icon: '📅',
     name: 'Calendar Drop',
     nameJa: 'カレンダー・ドロップ',
     topic: 'Prepositions of time: in / on / at',
@@ -53,6 +58,7 @@ const GAMES: GameMeta[] = [
   },
   {
     path: '/speed-find',
+    icon: '🔍',
     name: 'Speed Find',
     nameJa: 'スピード・サーチ',
     topic: 'Scanning & skimming real-world texts',
@@ -78,10 +84,13 @@ function Home() {
           <Link
             key={g.path}
             to={g.path}
-            className="block p-5 rounded-2xl bg-white shadow-sm border border-slate-200 active:scale-[0.98] transition"
+            className="block p-5 rounded-2xl bg-white shadow-sm border border-slate-200 active:scale-[0.98] transition hover:border-blue-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             <div className="flex items-baseline justify-between gap-2">
-              <h2 className="text-xl font-semibold">{g.name}</h2>
+              <h2 className="text-xl font-semibold">
+                <span aria-hidden="true" className="mr-2">{g.icon}</span>
+                {g.name}
+              </h2>
               <span className="text-sm text-slate-500">{g.nameJa}</span>
             </div>
             <p className="text-slate-700 mt-2">{g.topic}</p>
