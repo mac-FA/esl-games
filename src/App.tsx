@@ -6,6 +6,7 @@ import { useHints } from './lib/hint-context';
 import SentenceMashup from './games/SentenceMashup';
 import SupermarketCheckout from './games/SupermarketCheckout';
 import FixTheText from './games/FixTheText';
+import CalendarDrop from './games/CalendarDrop';
 
 type GameMeta = {
   path: string;
@@ -108,7 +109,7 @@ export default function App() {
       <Route path="/mashup" element={<SentenceMashup />} />
       <Route path="/checkout" element={<SupermarketCheckout />} />
       <Route path="/fix-text" element={<FixTheText />} />
-      <Route path="/calendar-drop" element={<Placeholder title="Calendar Drop" titleJa="カレンダー・ドロップ" />} />
+      <Route path="/calendar-drop" element={<CalendarDrop />} />
       <Route path="/speed-find" element={<Placeholder title="Speed Find" titleJa="スピード・サーチ" />} />
       <Route path="*" element={<Placeholder title="Not found" titleJa="見つかりません" />} />
     </Routes>
