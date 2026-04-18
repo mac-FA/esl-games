@@ -4,6 +4,7 @@ import HintText from './components/HintText';
 import GameShell from './components/GameShell';
 import { useHints } from './lib/hint-context';
 import SentenceMashup from './games/SentenceMashup';
+import SupermarketCheckout from './games/SupermarketCheckout';
 
 type GameMeta = {
   path: string;
@@ -104,7 +105,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/mashup" element={<SentenceMashup />} />
-      <Route path="/checkout" element={<Placeholder title="Supermarket Checkout" titleJa="スーパーのレジ" />} />
+      <Route path="/checkout" element={<SupermarketCheckout />} />
       <Route path="/fix-text" element={<Placeholder title="Fix the Text" titleJa="文章を直そう" />} />
       <Route path="/calendar-drop" element={<Placeholder title="Calendar Drop" titleJa="カレンダー・ドロップ" />} />
       <Route path="/speed-find" element={<Placeholder title="Speed Find" titleJa="スピード・サーチ" />} />

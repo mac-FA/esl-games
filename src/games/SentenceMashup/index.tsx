@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import GameShell from '../../components/GameShell';
 import Button from '../../components/Button';
 import ScoreBar from '../../components/ScoreBar';
@@ -258,6 +258,10 @@ function FeedbackPanel({
   onNext: () => void;
   isLast: boolean;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, []);
   const color =
     correctness === 'best'
       ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
@@ -273,7 +277,7 @@ function FeedbackPanel({
 
   return (
     <>
-      <div className={`mt-5 rounded-2xl border p-4 ${color}`} role="status" aria-live="polite">
+      <div ref={ref} className={`mt-5 rounded-2xl border p-4 ${color}`} role="status" aria-live="polite">
         <p className="font-semibold">{label}</p>
         <HintText ja={labelJa} className="text-inherit" />
         <p className="mt-2 text-base">{explainFor(pair, picked)}</p>
