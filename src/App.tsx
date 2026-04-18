@@ -1,4 +1,8 @@
 import { Routes, Route, Link } from 'react-router-dom';
+import JapaneseHintToggle from './components/JapaneseHintToggle';
+import HintText from './components/HintText';
+import GameShell from './components/GameShell';
+import { useHints } from './lib/hint-context';
 
 type GameMeta = {
   path: string;
@@ -15,7 +19,7 @@ const GAMES: GameMeta[] = [
     name: 'Sentence Mashup',
     nameJa: '文つなぎ',
     topic: 'Conjunctions: and / but / because / so',
-    topicJa: '接続詞',
+    topicJa: '接続詞の練習',
     minutes: '3–5 min',
   },
   {
@@ -23,7 +27,7 @@ const GAMES: GameMeta[] = [
     name: 'Supermarket Checkout',
     nameJa: 'スーパーのレジ',
     topic: 'Countable / Uncountable · How much / How many',
-    topicJa: '数えられる・数えられない名詞',
+    topicJa: '数えられる名詞と数えられない名詞',
     minutes: '4–5 min',
   },
   {
@@ -53,11 +57,16 @@ const GAMES: GameMeta[] = [
 ];
 
 function Home() {
+  const { hintsOn } = useHints();
   return (
     <main className="min-h-full p-4 sm:p-8 max-w-5xl mx-auto">
-      <header className="mb-8">
-        <h1 className="text-3xl sm:text-4xl font-bold">English Practice Games</h1>
-        <p className="text-slate-600 mt-1 text-lg">Level A1–A2 · 英語練習ゲーム</p>
+      <header className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-bold">English Practice Games</h1>
+          <p className="text-slate-600 mt-1 text-lg">Level A1–A2</p>
+          <HintText ja="英語練習ゲーム・初級（A1〜A2）レベル" />
+        </div>
+        <JapaneseHintToggle />
       </header>
       <div className="grid gap-4 sm:grid-cols-2">
         {GAMES.map((g) => (
@@ -71,6 +80,7 @@ function Home() {
               <span className="text-sm text-slate-500">{g.nameJa}</span>
             </div>
             <p className="text-slate-700 mt-2">{g.topic}</p>
+            {hintsOn && <p className="text-slate-500 text-sm mt-1">{g.topicJa}</p>}
             <p className="text-sm text-slate-500 mt-1">{g.minutes}</p>
           </Link>
         ))}
@@ -79,13 +89,12 @@ function Home() {
   );
 }
 
-function Placeholder({ title }: { title: string }) {
+function Placeholder({ title, titleJa }: { title: string; titleJa?: string }) {
   return (
-    <main className="min-h-full p-6 max-w-3xl mx-auto">
-      <Link to="/" className="text-blue-600 underline">← Home</Link>
-      <h1 className="text-2xl font-bold mt-4">{title}</h1>
+    <GameShell title={title} titleJa={titleJa}>
       <p className="text-slate-600 mt-2">Coming soon.</p>
-    </main>
+      <HintText ja="準備中です。" />
+    </GameShell>
   );
 }
 
@@ -93,12 +102,12 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/mashup" element={<Placeholder title="Sentence Mashup" />} />
-      <Route path="/checkout" element={<Placeholder title="Supermarket Checkout" />} />
-      <Route path="/fix-text" element={<Placeholder title="Fix the Text" />} />
-      <Route path="/calendar-drop" element={<Placeholder title="Calendar Drop" />} />
-      <Route path="/speed-find" element={<Placeholder title="Speed Find" />} />
-      <Route path="*" element={<Placeholder title="Not found" />} />
+      <Route path="/mashup" element={<Placeholder title="Sentence Mashup" titleJa="文つなぎ" />} />
+      <Route path="/checkout" element={<Placeholder title="Supermarket Checkout" titleJa="スーパーのレジ" />} />
+      <Route path="/fix-text" element={<Placeholder title="Fix the Text" titleJa="文章を直そう" />} />
+      <Route path="/calendar-drop" element={<Placeholder title="Calendar Drop" titleJa="カレンダー・ドロップ" />} />
+      <Route path="/speed-find" element={<Placeholder title="Speed Find" titleJa="スピード・サーチ" />} />
+      <Route path="*" element={<Placeholder title="Not found" titleJa="見つかりません" />} />
     </Routes>
   );
 }
