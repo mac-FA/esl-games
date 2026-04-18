@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import GameShell from '../../components/GameShell';
 import Button from '../../components/Button';
 import HintText from '../../components/HintText';
+import Scoreboard from '../../components/Scoreboard';
 import { loadJSON, saveJSON, removeKey } from '../../lib/storage';
 import { shuffle } from '../../lib/shuffle';
+import { useUser } from '../../lib/user-context';
+import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
 import { TEXTS, parseParagraph, applyCase, type FixTextEntry } from '../../content/fixtext';
 
 const RESUME_KEY = 'fixtext:state';
-const BEST_KEY = 'fixtext:best';
+const SCORES_KEY = 'fixtext:scoreboard';
 
 type Phase = 'intro' | 'resume' | 'playing' | 'checked';
 
@@ -22,12 +26,15 @@ function pickOrder(): FixTextEntry[] {
 }
 
 export default function FixTheText() {
+  const navigate = useNavigate();
+  const { name } = useUser();
   const [phase, setPhase] = useState<Phase>('intro');
   const [order, setOrder] = useState<FixTextEntry[]>([]);
   const [orderIdx, setOrderIdx] = useState(0);
   const [caps, setCaps] = useState<boolean[]>([]);
   const [periods, setPeriods] = useState<boolean[]>([]);
-  const [best, setBest] = useState<number>(() => loadJSON<number>(BEST_KEY, 0));
+  const [scores, setScores] = useState<ScoreEntry[]>(() => loadScoreboard(SCORES_KEY));
+  const [justAdded, setJustAdded] = useState<ScoreEntry | undefined>(undefined);
 
   const entry: FixTextEntry | undefined = order[orderIdx];
   const parsed = useMemo(() => (entry ? parseParagraph(entry.correct) : null), [entry]);
@@ -82,9 +89,11 @@ export default function FixTheText() {
     const correctPeriods = parsed.tokens.filter((t) => t.kind === 'gap' && t.hasPeriod === periods[t.index]).length;
     const total = parsed.wordCount + parsed.gapCount;
     const pct = Math.round((100 * (correctCaps + correctPeriods)) / total);
-    if (pct > best) {
-      setBest(pct);
-      saveJSON(BEST_KEY, pct);
+    if (pct > 0 && name) {
+      const entry: ScoreEntry = { name, score: pct, ts: Date.now() };
+      const { list } = addScore(SCORES_KEY, entry);
+      setScores(list);
+      setJustAdded(entry);
     }
     removeKey(RESUME_KEY);
   }
@@ -106,13 +115,9 @@ export default function FixTheText() {
     setPhase('playing');
   }
 
-  function resetToIntro() {
+  function goHome() {
     removeKey(RESUME_KEY);
-    setOrder([]);
-    setOrderIdx(0);
-    setCaps([]);
-    setPeriods([]);
-    setPhase('intro');
+    navigate('/');
   }
 
   // ---------------- render ----------------
@@ -124,10 +129,10 @@ export default function FixTheText() {
         </p>
         <HintText ja="単語をタップして大文字にします。単語の間の点をタップしてピリオドを入れます。" />
         <p className="text-slate-600 mt-2">{TEXTS.length} short texts, at your own pace.</p>
-        {best > 0 && <p className="text-slate-600 mt-2">Your best: {best}%</p>}
         <div className="mt-6">
           <Button size="lg" onClick={startNew} variant="primary">Start</Button>
         </div>
+        <Scoreboard entries={scores} scoreSuffix="%" />
       </GameShell>
     );
   }
@@ -180,10 +185,11 @@ export default function FixTheText() {
           correct={correctCaps + correctPeriods}
           total={total}
           correctText={entry.correct}
-          best={best}
+          scores={scores}
+          highlight={justAdded}
           onTryAgain={tryAgain}
           onNext={nextText}
-          onHome={resetToIntro}
+          onHome={goHome}
         />
       )}
     </GameShell>
@@ -261,7 +267,8 @@ function CheckedPanel({
   correct,
   total,
   correctText,
-  best,
+  scores,
+  highlight,
   onTryAgain,
   onNext,
   onHome,
@@ -270,7 +277,8 @@ function CheckedPanel({
   correct: number;
   total: number;
   correctText: string;
-  best: number;
+  scores: ScoreEntry[];
+  highlight?: ScoreEntry;
   onTryAgain: () => void;
   onNext: () => void;
   onHome: () => void;
@@ -289,7 +297,7 @@ function CheckedPanel({
         <p className="font-semibold">{perfect ? 'Perfect!' : `${pct}% \u2014 keep going`}</p>
         <HintText ja={perfect ? '満点です！' : 'もう少しです！'} className="text-inherit" />
         <p className="mt-1 text-sm">
-          {correct} / {total} correct · Best: {Math.max(best, pct)}%
+          {correct} / {total} correct
         </p>
         {!perfect && (
           <div className="mt-3">
@@ -298,6 +306,7 @@ function CheckedPanel({
           </div>
         )}
       </div>
+      <Scoreboard entries={scores} highlight={highlight} scoreSuffix="%" />
       <div className="mt-6 flex gap-3 flex-wrap">
         <Button size="lg" onClick={onTryAgain} variant="secondary">Try again</Button>
         <Button size="lg" onClick={onNext} variant="primary">Next text</Button>

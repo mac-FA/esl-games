@@ -3,6 +3,7 @@ import JapaneseHintToggle from './components/JapaneseHintToggle';
 import HintText from './components/HintText';
 import GameShell from './components/GameShell';
 import { useHints } from './lib/hint-context';
+import { useUser } from './lib/user-context';
 import SentenceMashup from './games/SentenceMashup';
 import SupermarketCheckout from './games/SupermarketCheckout';
 import FixTheText from './games/FixTheText';
@@ -69,6 +70,7 @@ const GAMES: GameMeta[] = [
 
 function Home() {
   const { hintsOn } = useHints();
+  const { name, changeName } = useUser();
   return (
     <main className="min-h-full p-4 sm:p-8 max-w-5xl mx-auto">
       <header className="mb-8 flex items-start justify-between gap-4">
@@ -76,6 +78,18 @@ function Home() {
           <h1 className="text-3xl sm:text-4xl font-bold">English Practice Games</h1>
           <p className="text-slate-600 mt-1 text-lg">Level A1–A2</p>
           <HintText ja="英語練習ゲーム・初級（A1〜A2）レベル" />
+          {name && (
+            <p className="mt-2 text-sm text-slate-600">
+              Playing as <b>{name}</b>{' '}
+              <button
+                type="button"
+                onClick={changeName}
+                className="text-blue-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+              >
+                (change)
+              </button>
+            </p>
+          )}
         </div>
         <JapaneseHintToggle />
       </header>

@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import GameShell from '../../components/GameShell';
 import Button from '../../components/Button';
 import HintText from '../../components/HintText';
-import { loadJSON, saveJSON } from '../../lib/storage';
+import Scoreboard from '../../components/Scoreboard';
 import { shuffle } from '../../lib/shuffle';
+import { useUser } from '../../lib/user-context';
+import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
 import { ITEMS, type CalendarItem, type CalendarPrep } from '../../content/calendar';
 
-const BEST_KEY = 'calendar:best';
+const SCORES_KEY = 'calendar:scoreboard';
 const ROUND_MS = 60_000;
 const START_FALL_MS = 4200; // first card falls this slowly
 const END_FALL_MS = 2100; // ...and this fast near the end
@@ -30,8 +33,11 @@ function fallDurationForElapsed(elapsedMs: number): number {
 }
 
 export default function CalendarDrop() {
+  const navigate = useNavigate();
+  const { name } = useUser();
   const [phase, setPhase] = useState<Phase>('intro');
-  const [best, setBest] = useState<number>(() => loadJSON<number>(BEST_KEY, 0));
+  const [scores, setScores] = useState<ScoreEntry[]>(() => loadScoreboard(SCORES_KEY));
+  const [justAdded, setJustAdded] = useState<ScoreEntry | undefined>(undefined);
 
   // Round state
   const [, setQueue] = useState<CalendarItem[]>([]);
@@ -79,6 +85,7 @@ export default function CalendarDrop() {
     setFlash(null);
     setRoundElapsed(0);
     setYPx(0);
+    setJustAdded(undefined);
     setPhase('playing');
     roundStartRef.current = performance.now();
     cardStartRef.current = performance.now();
@@ -172,19 +179,20 @@ export default function CalendarDrop() {
     setPhase('results');
     setCurrent(null);
     setScore((finalScore) => {
-      if (finalScore > best) {
-        setBest(finalScore);
-        saveJSON(BEST_KEY, finalScore);
+      if (finalScore > 0 && name) {
+        const entry: ScoreEntry = { name, score: finalScore, ts: Date.now() };
+        const { list } = addScore(SCORES_KEY, entry);
+        setScores(list);
+        setJustAdded(entry);
       }
       return finalScore;
     });
   }
 
-  function backToIntro() {
+  function goHome() {
     if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
-    setPhase('intro');
-    setCurrent(null);
+    navigate('/');
   }
 
   // ---------- render ----------
@@ -200,17 +208,17 @@ export default function CalendarDrop() {
           <li>• <b>on</b> — days and dates</li>
           <li>• <b>at</b> — clock times, night, mealtimes</li>
         </ul>
-        <p className="mt-3 text-slate-600">60 seconds. Cards speed up. Best score is saved.</p>
-        {best > 0 && <p className="text-slate-600 mt-2">Your best: {best}</p>}
+        <p className="mt-3 text-slate-600">60 seconds. Cards speed up.</p>
         <div className="mt-6">
           <Button size="lg" onClick={startRound} variant="primary">Start</Button>
         </div>
+        <Scoreboard entries={scores} />
       </GameShell>
     );
   }
 
   if (phase === 'results') {
-    return <Results log={log} score={score} misses={misses} bestStreak={bestStreak} best={best} onAgain={startRound} onHome={backToIntro} />;
+    return <Results log={log} score={score} misses={misses} bestStreak={bestStreak} scores={scores} highlight={justAdded} onAgain={startRound} onHome={goHome} />;
   }
 
   // playing
@@ -276,7 +284,7 @@ export default function CalendarDrop() {
       </div>
 
       <div className="mt-4 flex justify-end">
-        <Button size="md" onClick={backToIntro} variant="ghost">Give up</Button>
+        <Button size="md" onClick={endRound} variant="ghost">Give up</Button>
       </div>
     </GameShell>
   );
@@ -305,7 +313,8 @@ function Results({
   score,
   misses,
   bestStreak,
-  best,
+  scores,
+  highlight,
   onAgain,
   onHome,
 }: {
@@ -313,7 +322,8 @@ function Results({
   score: number;
   misses: number;
   bestStreak: number;
-  best: number;
+  scores: ScoreEntry[];
+  highlight?: ScoreEntry;
   onAgain: () => void;
   onHome: () => void;
 }) {
@@ -337,7 +347,9 @@ function Results({
 
   const wrongs = log.filter((e) => !e.correct);
 
-  const newBest = score > 0 && score >= best;
+  const topScore = scores[0]?.score ?? 0;
+  const madeBoard = !!highlight;
+  const newBest = madeBoard && score === topScore;
 
   return (
     <GameShell title="Calendar Drop" titleJa="カレンダー・ドロップ">
@@ -348,9 +360,10 @@ function Results({
         </p>
         <HintText ja={newBest ? '最高記録です！' : 'おつかれさまでした！'} />
         <p className="mt-1 text-slate-700">
-          Misses: {misses} · Best streak: {bestStreak} · All-time best: {Math.max(best, score)}
+          Misses: {misses} · Best streak: {bestStreak}
         </p>
       </div>
+      <Scoreboard entries={scores} highlight={highlight} />
 
       <div className="mt-5 grid grid-cols-3 gap-3">
         {(['in', 'on', 'at'] as CalendarPrep[]).map((p) => (

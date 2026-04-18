@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import GameShell from '../../components/GameShell';
 import Button from '../../components/Button';
 import ScoreBar from '../../components/ScoreBar';
 import HintText from '../../components/HintText';
+import Scoreboard from '../../components/Scoreboard';
 import { loadJSON, saveJSON, removeKey } from '../../lib/storage';
 import { shuffle } from '../../lib/shuffle';
+import { useUser } from '../../lib/user-context';
+import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
 import { ITEMS, ROUND_SIZE, type CheckoutItem } from '../../content/checkout';
 
 const RESUME_KEY = 'checkout:state';
-const BEST_KEY = 'checkout:best';
+const SCORES_KEY = 'checkout:scoreboard';
+const MAX_SCORE = ROUND_SIZE * 2;
 
 type SortAnswer = { id: string; pickedCountable: boolean; correct: boolean };
 type QuestionAnswer = { id: string; pickedMuch: boolean; correct: boolean };
@@ -36,12 +41,15 @@ function totalScore(s: SortAnswer[], q: QuestionAnswer[]): number {
 }
 
 export default function SupermarketCheckout() {
+  const navigate = useNavigate();
+  const { name } = useUser();
   const [phase, setPhase] = useState<Phase>('intro');
   const [items, setItems] = useState<CheckoutItem[]>([]);
   const [idx, setIdx] = useState(0);
   const [sortAnswers, setSortAnswers] = useState<SortAnswer[]>([]);
   const [questionAnswers, setQuestionAnswers] = useState<QuestionAnswer[]>([]);
-  const [best, setBest] = useState<number>(() => loadJSON<number>(BEST_KEY, 0));
+  const [scores, setScores] = useState<ScoreEntry[]>(() => loadScoreboard(SCORES_KEY));
+  const [justAdded, setJustAdded] = useState<ScoreEntry | undefined>(undefined);
   const [lastPick, setLastPick] = useState<{ kind: 'sort' | 'question'; correct: boolean; extra?: boolean } | null>(null);
 
   useEffect(() => {
@@ -113,9 +121,11 @@ export default function SupermarketCheckout() {
     setLastPick(null);
     if (idx + 1 >= ROUND_SIZE) {
       const total = totalScore(sortAnswers, questionAnswers);
-      if (total > best) {
-        setBest(total);
-        saveJSON(BEST_KEY, total);
+      if (total > 0 && name) {
+        const entry: ScoreEntry = { name, score: total, ts: Date.now() };
+        const { list } = addScore(SCORES_KEY, entry);
+        setScores(list);
+        setJustAdded(entry);
       }
       removeKey(RESUME_KEY);
       setPhase('results');
@@ -125,29 +135,23 @@ export default function SupermarketCheckout() {
     }
   }
 
-  function resetToIntro() {
+  function goHome() {
     removeKey(RESUME_KEY);
-    setItems([]);
-    setIdx(0);
-    setSortAnswers([]);
-    setQuestionAnswers([]);
-    setLastPick(null);
-    setPhase('intro');
+    navigate('/');
   }
 
   // ---------------- render ----------------
   if (phase === 'intro') {
-    const max = ROUND_SIZE * 2;
     return (
       <GameShell title="Supermarket Checkout" titleJa="スーパーのレジ">
         <p className="text-lg text-slate-700">
           Two phases: sort each item as <b>countable</b> or <b>uncountable</b>, then ask the shopkeeper with <b>How much</b> or <b>How many</b>.
         </p>
         <HintText ja="フェーズ1：数えられる／数えられない名詞を仕分けします。フェーズ2：How much / How many を選んで質問します。" />
-        {best > 0 && <p className="text-slate-600 mt-2">Your best: {best} / {max}</p>}
         <div className="mt-6">
           <Button size="lg" onClick={startNew} variant="primary">Start</Button>
         </div>
+        <Scoreboard entries={scores} scoreSuffix={` / ${MAX_SCORE}`} />
       </GameShell>
     );
   }
@@ -186,9 +190,10 @@ export default function SupermarketCheckout() {
           <div className="flex justify-between"><span>Phase 1 — Sorting</span><span>{sortedHits} / {ROUND_SIZE}</span></div>
           <div className="flex justify-between"><span>Phase 2 — Questions</span><span>{questionHits} / {ROUND_SIZE}</span></div>
         </div>
+        <Scoreboard entries={scores} highlight={justAdded} scoreSuffix={` / ${MAX_SCORE}`} />
         <div className="flex gap-3 mt-6 flex-wrap">
           <Button size="lg" onClick={startNew} variant="primary">Play again</Button>
-          <Button size="lg" onClick={resetToIntro} variant="secondary">Back to games</Button>
+          <Button size="lg" onClick={goHome} variant="secondary">Back to games</Button>
         </div>
       </GameShell>
     );
@@ -206,7 +211,7 @@ export default function SupermarketCheckout() {
       <ScoreBar
         score={currentScore}
         progress={{ current: progressCurrent, total: progressTotal }}
-        best={best || undefined}
+        best={scores[0]?.score || undefined}
         className="mb-4"
       />
       <p className="text-sm uppercase tracking-wider text-slate-500">

@@ -36,7 +36,7 @@ export const TEXTS: SpeedFindText[] = [
     kind: 'menu',
     title: 'Lunch Set of the Day',
     body:
-      'Monday: chicken curry\nTuesday: pork cutlet\nWednesday: grilled fish\nThursday: pasta\nFriday: {{tempura}}',
+      'Monday: chicken curry\nTuesday: pork cutlet\nWednesday: grilled fish\nThursday: pasta\n{{Friday}}: tempura',
     question: 'Which day has tempura?',
     questionJa: '天ぷらの日は？',
   },
@@ -45,7 +45,7 @@ export const TEXTS: SpeedFindText[] = [
     kind: 'menu',
     title: 'Cafe Menu — Small Plates',
     body:
-      'Toast   ¥250\nRice ball   {{¥200}}\nSalad   ¥380\nEgg sandwich   ¥420\nSoup   ¥300',
+      'Toast   ¥250\n{{Rice ball}}   ¥200\nSalad   ¥380\nEgg sandwich   ¥420\nSoup   ¥300',
     question: 'What is the cheapest item?',
     questionJa: '一番安いのは？',
   },

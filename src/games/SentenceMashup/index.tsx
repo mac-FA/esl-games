@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import GameShell from '../../components/GameShell';
 import Button from '../../components/Button';
 import ScoreBar from '../../components/ScoreBar';
 import HintText from '../../components/HintText';
+import Scoreboard from '../../components/Scoreboard';
 import { useHints } from '../../lib/hint-context';
 import { loadJSON, saveJSON, removeKey } from '../../lib/storage';
 import { shuffle } from '../../lib/shuffle';
+import { useUser } from '../../lib/user-context';
+import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
 import {
   PAIRS,
   CONJUNCTIONS,
@@ -19,8 +23,7 @@ import {
 
 const ROUND_SIZE = 10;
 const RESUME_KEY = 'mashup:state';
-const BEST_KEY = 'mashup:best';
-const BREAKDOWN_KEY = 'mashup:bestBreakdown';
+const SCORES_KEY = 'mashup:scoreboard';
 
 type Answer = { id: string; picked: Conjunction; correctness: Correctness };
 
@@ -72,13 +75,16 @@ function pickRound(): MashupPair[] {
 }
 
 export default function SentenceMashup() {
+  const navigate = useNavigate();
   const { hintsOn } = useHints();
+  const { name } = useUser();
   const [phase, setPhase] = useState<Phase>('intro');
   const [pairs, setPairs] = useState<MashupPair[]>([]);
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [pickedConj, setPickedConj] = useState<Conjunction | null>(null);
-  const [best, setBest] = useState<number>(() => loadJSON<number>(BEST_KEY, 0));
+  const [scores, setScores] = useState<ScoreEntry[]>(() => loadScoreboard(SCORES_KEY));
+  const [justAdded, setJustAdded] = useState<ScoreEntry | undefined>(undefined);
 
   // On mount: check for saved in-progress round.
   useEffect(() => {
@@ -134,10 +140,11 @@ export default function SentenceMashup() {
     if (idx + 1 >= ROUND_SIZE) {
       // Finish round.
       const finalScore = computeScore(answers);
-      if (finalScore > best) {
-        setBest(finalScore);
-        saveJSON(BEST_KEY, finalScore);
-        saveJSON(BREAKDOWN_KEY, computeBreakdown(pairs, answers));
+      if (finalScore > 0 && name) {
+        const entry: ScoreEntry = { name, score: finalScore, ts: Date.now() };
+        const { list } = addScore(SCORES_KEY, entry);
+        setScores(list);
+        setJustAdded(entry);
       }
       removeKey(RESUME_KEY);
       setPhase('results');
@@ -147,13 +154,9 @@ export default function SentenceMashup() {
     }
   }
 
-  function resetToIntro() {
+  function goHome() {
     removeKey(RESUME_KEY);
-    setPairs([]);
-    setIdx(0);
-    setAnswers([]);
-    setPickedConj(null);
-    setPhase('intro');
+    navigate('/');
   }
 
   // ---------------- render ----------------
@@ -165,10 +168,10 @@ export default function SentenceMashup() {
         </p>
         <HintText ja="二つの文を、and（そして）／but（しかし）／because（なぜなら）／so（だから）のどれかでつなげましょう。" />
         <p className="text-slate-600 mt-2">10 pairs per round.</p>
-        {best > 0 && <p className="text-slate-600 mt-2">Your best: {best} / {ROUND_SIZE}</p>}
         <div className="mt-6">
           <Button size="lg" onClick={startNew} variant="primary">Start</Button>
         </div>
+        <Scoreboard entries={scores} scoreSuffix={` / ${ROUND_SIZE}`} />
       </GameShell>
     );
   }
@@ -189,7 +192,17 @@ export default function SentenceMashup() {
   }
 
   if (phase === 'results') {
-    return <Results pairs={pairs} answers={answers} onRestart={startNew} onHome={resetToIntro} hintsOn={hintsOn} />;
+    return (
+      <Results
+        pairs={pairs}
+        answers={answers}
+        scores={scores}
+        highlight={justAdded}
+        onRestart={startNew}
+        onHome={goHome}
+        hintsOn={hintsOn}
+      />
+    );
   }
 
   // playing
@@ -201,7 +214,7 @@ export default function SentenceMashup() {
       <ScoreBar
         score={computeScore(answers)}
         progress={{ current: idx + (pickedConj ? 1 : 0), total: ROUND_SIZE }}
-        best={best || undefined}
+        best={scores[0]?.score || undefined}
         className="mb-4"
       />
 
@@ -299,12 +312,16 @@ function FeedbackPanel({
 function Results({
   pairs,
   answers,
+  scores,
+  highlight,
   onRestart,
   onHome,
   hintsOn,
 }: {
   pairs: MashupPair[];
   answers: Answer[];
+  scores: ScoreEntry[];
+  highlight?: ScoreEntry;
   onRestart: () => void;
   onHome: () => void;
   hintsOn: boolean;
@@ -350,6 +367,8 @@ function Results({
           </p>
         )}
       </div>
+
+      <Scoreboard entries={scores} highlight={highlight} scoreSuffix={` / ${pairs.length}`} />
 
       <div className="flex gap-3 mt-6 flex-wrap">
         <Button size="lg" onClick={onRestart} variant="primary">Play again</Button>

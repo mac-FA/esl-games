@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import GameShell from '../../components/GameShell';
 import Button from '../../components/Button';
 import HintText from '../../components/HintText';
-import { loadJSON, saveJSON } from '../../lib/storage';
+import Scoreboard from '../../components/Scoreboard';
 import { shuffle } from '../../lib/shuffle';
+import { useUser } from '../../lib/user-context';
+import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
 import { TEXTS, parseBody, type SpeedFindText, type SpeedFindKind } from '../../content/speedfind';
 
-const BEST_KEY = 'speedfind:best';
+const SCORES_KEY = 'speedfind:scoreboard';
 const ROUND_MS = 30_000;
 const WRONG_PENALTY_MS = 3_000;
 
@@ -20,8 +23,11 @@ type LogEntry = {
 };
 
 export default function SpeedFind() {
+  const navigate = useNavigate();
+  const { name } = useUser();
   const [phase, setPhase] = useState<Phase>('intro');
-  const [best, setBest] = useState<number>(() => loadJSON<number>(BEST_KEY, 0));
+  const [scores, setScores] = useState<ScoreEntry[]>(() => loadScoreboard(SCORES_KEY));
+  const [justAdded, setJustAdded] = useState<ScoreEntry | undefined>(undefined);
 
   const [order, setOrder] = useState<SpeedFindText[]>([]);
   const [orderIdx, setOrderIdx] = useState(0);
@@ -55,6 +61,7 @@ export default function SpeedFind() {
     setLog([]);
     setTimeLeft(ROUND_MS);
     setLastTap(null);
+    setJustAdded(undefined);
     roundStartRef.current = performance.now();
     penaltyRef.current = 0;
     setPhase('playing');
@@ -78,9 +85,11 @@ export default function SpeedFind() {
     rafRef.current = null;
     setPhase('results');
     setScore((s) => {
-      if (s > best) {
-        setBest(s);
-        saveJSON(BEST_KEY, s);
+      if (s > 0 && name) {
+        const entry: ScoreEntry = { name, score: s, ts: Date.now() };
+        const { list } = addScore(SCORES_KEY, entry);
+        setScores(list);
+        setJustAdded(entry);
       }
       return s;
     });
@@ -126,10 +135,10 @@ export default function SpeedFind() {
     });
   }
 
-  function backToIntro() {
+  function goHome() {
     if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
-    setPhase('intro');
+    navigate('/');
   }
 
   // ---------- render ----------
@@ -145,16 +154,16 @@ export default function SpeedFind() {
           <li>• Wrong tap = <b>−3 seconds</b></li>
           <li>• Score = correct answers</li>
         </ul>
-        {best > 0 && <p className="text-slate-600 mt-3">Your best: {best}</p>}
         <div className="mt-6">
           <Button size="lg" onClick={startRound} variant="primary">Start</Button>
         </div>
+        <Scoreboard entries={scores} />
       </GameShell>
     );
   }
 
   if (phase === 'results') {
-    return <Results score={score} best={best} log={log} onAgain={startRound} onHome={backToIntro} />;
+    return <Results score={score} scores={scores} highlight={justAdded} log={log} onAgain={startRound} onHome={goHome} />;
   }
 
   // playing
@@ -265,13 +274,15 @@ function TextCard({
 
 function Results({
   score,
-  best,
+  scores,
+  highlight,
   log,
   onAgain,
   onHome,
 }: {
   score: number;
-  best: number;
+  scores: ScoreEntry[];
+  highlight?: ScoreEntry;
   log: LogEntry[];
   onAgain: () => void;
   onHome: () => void;
@@ -280,7 +291,9 @@ function Results({
   useEffect(() => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
-  const newBest = score > 0 && score >= best;
+  const madeBoard = !!highlight;
+  const topScore = scores[0]?.score ?? 0;
+  const newBest = madeBoard && score === topScore;
   const attempted = log.length;
   return (
     <GameShell title="Speed Find" titleJa="スピード・サーチ">
@@ -289,10 +302,9 @@ function Results({
           {newBest ? 'New best!' : "Time's up"} <span className="text-slate-700 font-semibold">— {score} correct</span>
         </p>
         <HintText ja={newBest ? '最高記録です！' : 'よくやりました！'} />
-        <p className="mt-1 text-slate-700">
-          Attempted: {attempted} · All-time best: {Math.max(best, score)}
-        </p>
+        <p className="mt-1 text-slate-700">Attempted: {attempted}</p>
       </div>
+      <Scoreboard entries={scores} highlight={highlight} />
       {log.length > 0 && (
         <div className="mt-5">
           <p className="font-semibold text-slate-800">Review</p>
