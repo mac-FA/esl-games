@@ -5,6 +5,7 @@ import GameShell from './components/GameShell';
 import { useHints } from './lib/hint-context';
 import SentenceMashup from './games/SentenceMashup';
 import SupermarketCheckout from './games/SupermarketCheckout';
+import FixTheText from './games/FixTheText';
 
 type GameMeta = {
   path: string;
@@ -106,7 +107,7 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/mashup" element={<SentenceMashup />} />
       <Route path="/checkout" element={<SupermarketCheckout />} />
-      <Route path="/fix-text" element={<Placeholder title="Fix the Text" titleJa="文章を直そう" />} />
+      <Route path="/fix-text" element={<FixTheText />} />
       <Route path="/calendar-drop" element={<Placeholder title="Calendar Drop" titleJa="カレンダー・ドロップ" />} />
       <Route path="/speed-find" element={<Placeholder title="Speed Find" titleJa="スピード・サーチ" />} />
       <Route path="*" element={<Placeholder title="Not found" titleJa="見つかりません" />} />
