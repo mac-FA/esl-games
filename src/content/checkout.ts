@@ -19,7 +19,7 @@ export const ITEMS: CheckoutItem[] = [
   { id: 'milk', emoji: '🥛', singular: 'milk', plural: 'milk', countable: false, note: 'Milk is a liquid \u2014 uncountable.' },
   { id: 'coffee', emoji: '☕', singular: 'coffee', plural: 'coffee', countable: false, note: 'As a drink substance, coffee is uncountable. (\u201Ctwo coffees\u201D means two cups.)' },
   { id: 'tea', emoji: '🍵', singular: 'tea', plural: 'tea', countable: false, note: 'Like coffee \u2014 uncountable as a drink.' },
-  { id: 'sugar', emoji: '🍬', singular: 'sugar', plural: 'sugar', countable: false, note: 'Sugar is uncountable (a substance).' },
+  { id: 'honey', emoji: '🍯', singular: 'honey', plural: 'honey', countable: false, note: 'Honey is a liquid \u2014 uncountable.' },
   { id: 'salt', emoji: '🧂', singular: 'salt', plural: 'salt', countable: false, note: 'Salt is uncountable (a substance).' },
   { id: 'butter', emoji: '🧈', singular: 'butter', plural: 'butter', countable: false, note: 'Butter is uncountable (a substance).' },
   { id: 'money', emoji: '💴', singular: 'money', plural: 'money', countable: false, note: 'Money is uncountable. We count yen, dollars, or coins.' },

@@ -15,6 +15,7 @@ import { sfx } from '../../lib/sfx';
 
 const RESUME_KEY = 'fixtext:state';
 const SCORES_KEY = 'fixtext:scoreboard';
+const PER_TEXT_MS = 20_000;
 
 type Phase = 'intro' | 'resume' | 'playing' | 'checked';
 
@@ -70,6 +71,19 @@ export default function FixTheText() {
     if (phase !== 'playing' || !entry) return;
     saveJSON(RESUME_KEY, { id: entry.id, caps, periods } satisfies SavedState);
   }, [phase, entry, caps, periods]);
+
+  // Per-text 20s timer. On expiry, auto-check with whatever the learner has
+  // tapped so far. We use a ref so the setTimeout callback sees the latest
+  // `check` (which closes over the latest caps/periods), without resetting
+  // the timer on every tap.
+  const checkRef = useRef<() => void>(() => {});
+  checkRef.current = () => check();
+
+  useEffect(() => {
+    if (phase !== 'playing' || !entry) return;
+    const id = window.setTimeout(() => checkRef.current(), PER_TEXT_MS);
+    return () => window.clearTimeout(id);
+  }, [phase, entry]);
 
   function startNew() {
     const o = pickOrder();
@@ -145,7 +159,7 @@ export default function FixTheText() {
           Tap a word to capitalize its first letter. Tap a dot between words to add a period.
         </p>
         <HintText ja="単語をタップして大文字にします。単語の間の点をタップしてピリオドを入れます。" />
-        <p className="text-slate-600 mt-2">{TEXTS.length} short texts, at your own pace.</p>
+        <p className="text-slate-600 mt-2">{TEXTS.length} short texts · <b>20 seconds</b> each.</p>
         <div className="mt-6">
           <Button size="lg" onClick={startNew} variant="primary">Start</Button>
         </div>
@@ -182,6 +196,8 @@ export default function FixTheText() {
         <p className="text-sm text-slate-400">{orderIdx + 1} / {order.length}</p>
       </div>
       {entry.titleJa && <HintText ja={entry.titleJa} />}
+
+      <CountdownBar active={phase === 'playing'} resetKey={`${orderIdx}-${phase}`} durationMs={PER_TEXT_MS} />
 
       <Paragraph
         parsed={parsed}
@@ -330,5 +346,22 @@ function CheckedPanel({
         <Button size="lg" onClick={onHome} variant="ghost">Back to games</Button>
       </div>
     </>
+  );
+}
+
+function CountdownBar({ active, resetKey, durationMs }: { active: boolean; resetKey: number | string; durationMs: number }) {
+  return (
+    <div className="mt-3 mb-1 h-1.5 bg-slate-100 rounded-full overflow-hidden" aria-hidden>
+      <div
+        key={resetKey}
+        className={active ? 'h-full bg-blue-500' : 'h-full bg-slate-300'}
+        style={
+          active
+            ? { animation: `fixtext-countdown ${durationMs}ms linear forwards` }
+            : { width: '0%' }
+        }
+      />
+      <style>{`@keyframes fixtext-countdown { from { width: 100%; } to { width: 0%; } }`}</style>
+    </div>
   );
 }

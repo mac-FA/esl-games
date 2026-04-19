@@ -17,6 +17,7 @@ import { ITEMS, ROUND_SIZE, type CheckoutItem } from '../../content/checkout';
 const RESUME_KEY = 'checkout:state';
 const SCORES_KEY = 'checkout:scoreboard';
 const MAX_SCORE = ROUND_SIZE * 2;
+const PER_Q_MS = 5000;
 
 type SortAnswer = { id: string; pickedCountable: boolean; correct: boolean };
 type QuestionAnswer = { id: string; pickedMuch: boolean; correct: boolean };
@@ -78,6 +79,27 @@ export default function SupermarketCheckout() {
     }
     setPhase('intro');
   }, []);
+
+  // Per-question timer: runs only during an active pick (phase1 or phase2),
+  // pauses for feedback/results. On expiry, auto-pick the wrong choice so the
+  // existing feedback flow kicks in with the correct explanation.
+  useEffect(() => {
+    if (phase !== 'phase1' && phase !== 'phase2') return;
+    const item = items[idx];
+    if (!item) return;
+    const id = window.setTimeout(() => {
+      if (phase === 'phase1') {
+        // Wrong bin = opposite of the truth.
+        pickBin(!item.countable);
+      } else {
+        // Wrong question-word: if uncountable, correct is "how much" (true),
+        // so wrong is "how many" (false), and vice versa.
+        pickQuestion(item.countable);
+      }
+    }, PER_Q_MS);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, idx]);
 
   useEffect(() => {
     if (phase !== 'phase1' && phase !== 'phase2') return;
@@ -165,6 +187,7 @@ export default function SupermarketCheckout() {
           Two phases: sort each item as <b>countable</b> or <b>uncountable</b>, then ask the shopkeeper with <b>How much</b> or <b>How many</b>.
         </p>
         <HintText ja="フェーズ1：数えられる／数えられない名詞を仕分けします。フェーズ2：How much / How many を選んで質問します。" />
+        <p className="text-slate-600 mt-2"><b>5 seconds</b> per item.</p>
         <div className="mt-6">
           <Button size="lg" onClick={startNew} variant="primary">Start</Button>
         </div>
@@ -222,6 +245,7 @@ export default function SupermarketCheckout() {
   const currentScore = totalScore(sortAnswers, questionAnswers);
   const progressCurrent = inPhase1 ? idx + (phase === 'phase1-feedback' ? 1 : 0) : ROUND_SIZE + idx + (phase === 'phase2-feedback' ? 1 : 0);
   const progressTotal = ROUND_SIZE * 2;
+  const picking = phase === 'phase1' || phase === 'phase2';
 
   return (
     <GameShell title="Supermarket Checkout" titleJa="スーパーのレジ" bg={GAME_BG.checkout}>
@@ -236,8 +260,27 @@ export default function SupermarketCheckout() {
       </p>
       <HintText ja={inPhase1 ? '数えられる／数えられないを選びましょう' : 'How much / How many を選びましょう'} />
 
+      <CountdownBar active={picking} resetKey={`${phase}-${idx}`} durationMs={PER_Q_MS} />
+
       {inPhase1 ? <Phase1View item={item} phase={phase} lastPick={lastPick} onPick={pickBin} onNext={advancePhase1} /> : <Phase2View item={item} phase={phase} lastPick={lastPick} onPick={pickQuestion} onNext={advancePhase2} />}
     </GameShell>
+  );
+}
+
+function CountdownBar({ active, resetKey, durationMs }: { active: boolean; resetKey: number | string; durationMs: number }) {
+  return (
+    <div className="mt-3 mb-2 h-1.5 bg-slate-100 rounded-full overflow-hidden" aria-hidden>
+      <div
+        key={resetKey}
+        className={active ? 'h-full bg-blue-500' : 'h-full bg-slate-300'}
+        style={
+          active
+            ? { animation: `checkout-countdown ${durationMs}ms linear forwards` }
+            : { width: '0%' }
+        }
+      />
+      <style>{`@keyframes checkout-countdown { from { width: 100%; } to { width: 0%; } }`}</style>
+    </div>
   );
 }
 

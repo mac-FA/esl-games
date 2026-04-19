@@ -27,8 +27,9 @@ import {
 const ROUND_SIZE = 10;
 const RESUME_KEY = 'mashup:state';
 const SCORES_KEY = 'mashup:scoreboard';
+const PER_PAIR_MS = 5000;
 
-type Answer = { id: string; picked: Conjunction; correctness: Correctness };
+type Answer = { id: string; picked: Conjunction | null; correctness: Correctness };
 
 type SavedState = {
   pairIds: string[];
@@ -86,8 +87,24 @@ export default function SentenceMashup() {
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [pickedConj, setPickedConj] = useState<Conjunction | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
   const [scores, setScores] = useState<ScoreEntry[]>(() => loadScoreboard(SCORES_KEY));
   const [justAdded, setJustAdded] = useState<ScoreEntry | undefined>(undefined);
+
+  // Per-pair timer: runs only while the learner is picking (pickedConj == null
+  // and not already timed out). Feedback/review time is untimed.
+  useEffect(() => {
+    if (phase !== 'playing') return;
+    if (pickedConj != null || timedOut) return;
+    const id = window.setTimeout(() => {
+      const pair = pairs[idx];
+      if (!pair) return;
+      setTimedOut(true);
+      setAnswers((prev) => [...prev, { id: pair.id, picked: null, correctness: 'wrong' }]);
+      sfx('wrong');
+    }, PER_PAIR_MS);
+    return () => window.clearTimeout(id);
+  }, [phase, pickedConj, timedOut, idx, pairs]);
 
   // On mount: pull shared scoreboard from the remote backend (if configured).
   useEffect(() => {
@@ -133,6 +150,7 @@ export default function SentenceMashup() {
     setIdx(0);
     setAnswers([]);
     setPickedConj(null);
+    setTimedOut(false);
     setPhase('playing');
   }
 
@@ -141,7 +159,7 @@ export default function SentenceMashup() {
   }
 
   function pickConjunction(conj: Conjunction) {
-    if (pickedConj) return;
+    if (pickedConj || timedOut) return;
     setPickedConj(conj);
     const pair = pairs[idx];
     const correctness = correctnessFor(pair, conj);
@@ -168,6 +186,7 @@ export default function SentenceMashup() {
     } else {
       setIdx(idx + 1);
       setPickedConj(null);
+      setTimedOut(false);
     }
   }
 
@@ -184,7 +203,7 @@ export default function SentenceMashup() {
           Join the two sentences with the best word: <b>and</b>, <b>but</b>, <b>because</b>, or <b>so</b>.
         </p>
         <HintText ja="二つの文を、and（そして）／but（しかし）／because（なぜなら）／so（だから）のどれかでつなげましょう。" />
-        <p className="text-slate-600 mt-2">10 pairs per round.</p>
+        <p className="text-slate-600 mt-2">10 pairs · <b>5 seconds</b> each.</p>
         <div className="mt-6">
           <Button size="lg" onClick={startNew} variant="primary">Start</Button>
         </div>
@@ -225,15 +244,18 @@ export default function SentenceMashup() {
   // playing
   const pair = pairs[idx];
   const correctness = pickedConj ? correctnessFor(pair, pickedConj) : null;
+  const picking = !pickedConj && !timedOut;
   const showCombined = pickedConj != null;
   return (
     <GameShell title="Sentence Mashup" titleJa="文つなぎ" bg={GAME_BG.mashup}>
       <ScoreBar
         score={computeScore(answers)}
-        progress={{ current: idx + (pickedConj ? 1 : 0), total: ROUND_SIZE }}
+        progress={{ current: idx + (pickedConj || timedOut ? 1 : 0), total: ROUND_SIZE }}
         best={scores[0]?.score || undefined}
         className="mb-4"
       />
+
+      <CountdownBar active={picking} resetKey={idx} durationMs={PER_PAIR_MS} />
 
       <section className="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm">
         {!showCombined ? (
@@ -254,7 +276,7 @@ export default function SentenceMashup() {
         )}
       </section>
 
-      {!pickedConj ? (
+      {picking && (
         <div className="grid grid-cols-2 gap-3 mt-6 sm:grid-cols-4">
           {CONJUNCTIONS.map((c) => (
             <Button key={c} size="lg" variant="secondary" onClick={() => pickConjunction(c)}>
@@ -262,7 +284,11 @@ export default function SentenceMashup() {
             </Button>
           ))}
         </div>
-      ) : (
+      )}
+      {timedOut && (
+        <TimeoutPanel pair={pair} onNext={next} isLast={idx + 1 >= ROUND_SIZE} />
+      )}
+      {pickedConj && (
         <FeedbackPanel
           pair={pair}
           picked={pickedConj}
@@ -272,6 +298,54 @@ export default function SentenceMashup() {
         />
       )}
     </GameShell>
+  );
+}
+
+/** Thin 5s countdown bar. Uses CSS animation keyed on `resetKey` so each new
+ *  pair re-triggers the 100%→0% sweep without per-frame React state. */
+function CountdownBar({ active, resetKey, durationMs }: { active: boolean; resetKey: number | string; durationMs: number }) {
+  return (
+    <div className="mb-3 h-1.5 bg-slate-100 rounded-full overflow-hidden" aria-hidden>
+      <div
+        key={resetKey}
+        className={active ? 'h-full bg-blue-500' : 'h-full bg-slate-300'}
+        style={
+          active
+            ? { animation: `mashup-countdown ${durationMs}ms linear forwards` }
+            : { width: '0%' }
+        }
+      />
+      <style>{`@keyframes mashup-countdown { from { width: 100%; } to { width: 0%; } }`}</style>
+    </div>
+  );
+}
+
+function TimeoutPanel({ pair, onNext, isLast }: { pair: MashupPair; onNext: () => void; isLast: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, []);
+  return (
+    <>
+      <div
+        ref={ref}
+        className="mt-5 rounded-2xl border p-4 bg-rose-50 border-rose-200 text-rose-900"
+        role="status"
+        aria-live="polite"
+      >
+        <p className="font-semibold">⏱ Time's up</p>
+        <HintText ja="時間切れです。" className="text-inherit" />
+        <p className="mt-2 text-sm">
+          Best answer: <b>{pair.best}</b>
+        </p>
+        <p className="mt-1 text-base">{combineClause(pair.a, pair.b, pair.best)}</p>
+      </div>
+      <div className="mt-6 flex justify-end">
+        <Button size="lg" onClick={onNext} variant="primary">
+          {isLast ? 'See results' : 'Next'}
+        </Button>
+      </div>
+    </>
   );
 }
 
