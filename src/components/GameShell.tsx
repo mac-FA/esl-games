@@ -51,10 +51,11 @@ export default function GameShell({ title, titleJa, bg, bgDark, children }: Prop
     <div className="relative min-h-screen w-full">
       {/* Layer 1: white wash base (so the image never washes out the card text) */}
       <div className="fixed inset-0 -z-20 bg-white" aria-hidden />
-      {/* Layer 2: the image itself, slightly faded for readability. */}
+      {/* Layer 2: the image itself — contained (whole image visible, no
+          zoom-crop), slightly faded for readability. */}
       <div
-        className="fixed inset-0 -z-10 bg-center bg-cover"
-        style={{ backgroundImage: `url('${bg}')`, opacity: 0.65 }}
+        className="fixed inset-0 -z-10 bg-center bg-no-repeat bg-contain"
+        style={{ backgroundImage: `url('${bg}')`, opacity: 0.7 }}
         aria-hidden
       />
 
