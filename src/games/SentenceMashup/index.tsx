@@ -27,7 +27,7 @@ import {
 const ROUND_SIZE = 10;
 const RESUME_KEY = 'mashup:state';
 const SCORES_KEY = 'mashup:scoreboard';
-const PER_PAIR_MS = 5000;
+const PER_PAIR_MS = 8000;
 
 type Answer = { id: string; picked: Conjunction | null; correctness: Correctness };
 
@@ -203,7 +203,7 @@ export default function SentenceMashup() {
           Join the two sentences with the best word: <b>and</b>, <b>but</b>, <b>because</b>, or <b>so</b>.
         </p>
         <HintText ja="二つの文を、and（そして）／but（しかし）／because（なぜなら）／so（だから）のどれかでつなげましょう。" />
-        <p className="text-slate-600 mt-2">10 pairs · <b>5 seconds</b> each.</p>
+        <p className="text-slate-600 mt-2">10 pairs · <b>8 seconds</b> each.</p>
         <div className="mt-6">
           <Button size="lg" onClick={startNew} variant="primary">Start</Button>
         </div>

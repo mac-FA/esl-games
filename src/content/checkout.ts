@@ -26,7 +26,7 @@ export const ITEMS: CheckoutItem[] = [
   { id: 'luggage', emoji: '🧳', singular: 'luggage', plural: 'luggage', countable: false, note: 'Luggage is always uncountable in English. We count bags or suitcases.' },
   { id: 'news', emoji: '📰', singular: 'news', plural: 'news', countable: false, note: 'News is uncountable, even though it ends in \u201Cs.\u201D' },
   { id: 'advice', emoji: '💡', singular: 'advice', plural: 'advice', countable: false, note: 'Advice is always uncountable in English.' },
-  { id: 'flour', emoji: '🌾', singular: 'flour', plural: 'flour', countable: false, note: 'Flour is uncountable (a powder).' },
+  { id: 'cheese', emoji: '🧀', singular: 'cheese', plural: 'cheese', countable: false, note: 'Cheese is uncountable (a substance). We count slices or blocks.' },
   { id: 'soup', emoji: '🍲', singular: 'soup', plural: 'soup', countable: false, note: 'Soup is uncountable (a liquid).' },
 
   // ---- Countable ----

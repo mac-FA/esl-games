@@ -15,7 +15,7 @@ import { sfx } from '../../lib/sfx';
 
 const RESUME_KEY = 'fixtext:state';
 const SCORES_KEY = 'fixtext:scoreboard';
-const PER_TEXT_MS = 20_000;
+const PER_TEXT_MS = 45_000;
 
 type Phase = 'intro' | 'resume' | 'playing' | 'checked';
 
@@ -159,7 +159,7 @@ export default function FixTheText() {
           Tap a word to capitalize its first letter. Tap a dot between words to add a period.
         </p>
         <HintText ja="単語をタップして大文字にします。単語の間の点をタップしてピリオドを入れます。" />
-        <p className="text-slate-600 mt-2">{TEXTS.length} short texts · <b>20 seconds</b> each.</p>
+        <p className="text-slate-600 mt-2">{TEXTS.length} short texts · <b>45 seconds</b> each.</p>
         <div className="mt-6">
           <Button size="lg" onClick={startNew} variant="primary">Start</Button>
         </div>
