@@ -8,6 +8,7 @@ import { ToastProvider } from './components/Toast';
 import NameGate from './components/NameGate';
 import { clearLegacyBestKeys } from './lib/scoreboard';
 import { preloadGameBackgrounds } from './lib/game-bg';
+import { installAudioUnlock } from './lib/sfx';
 import './index.css';
 
 // One-time cleanup of pre-scoreboard `<game>:best` keys.
@@ -15,6 +16,10 @@ clearLegacyBestKeys();
 
 // Kick off background image fetches ASAP so navigating to a game doesn't flash.
 preloadGameBackgrounds();
+
+// Arrange for the first user interaction to unlock the WebAudio context
+// (required by Chrome/Safari autoplay policies).
+installAudioUnlock();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

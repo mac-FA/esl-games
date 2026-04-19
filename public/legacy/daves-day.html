@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Dave's Day</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#111;font-family:'Press Start 2P',monospace;display:flex;justify-content:center;
+      align-items:center;height:100vh;height:100dvh;overflow:hidden;user-select:none;
+      -webkit-user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+    #app{position:relative;width:100%;max-width:420px;height:100vh;height:100dvh;
+      background:#1a1a2e;overflow:hidden;display:flex;flex-direction:column}
+    @media(min-width:421px){#app{border-radius:12px;height:min(100dvh,780px);box-shadow:0 0 30px rgba(0,0,0,.6)}}
+
+    /* TITLE */
+    .scr-title{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      text-align:center;padding:20px;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460)}
+    .scr-title h1{font-size:26px;color:#ffd700;text-shadow:3px 3px 0 #806b00;line-height:1.4;margin-bottom:8px}
+    .scr-title .sub{font-size:9px;color:#7ab;margin-bottom:30px}
+    .scr-title .desc{font-size:8px;color:#99aabb;line-height:2.2;margin-bottom:30px}
+
+    /* STORY */
+    .scr-story{flex:1;display:flex;flex-direction:column;padding:16px;
+      background:linear-gradient(180deg,#1a2a1a,#0d1f0d)}
+    .scr-story .lv{font-size:9px;color:#ffd700;text-align:center;margin-bottom:6px}
+    .scr-story h2{font-size:13px;color:#fff;text-align:center;margin-bottom:16px}
+    .story-lines{flex:1;display:flex;flex-direction:column;justify-content:flex-start;gap:8px;padding:12px 8px 0}
+    .story-line{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);
+      padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.08)}
+    .story-line .num{font-size:8px;color:#ffd700;min-width:16px}
+    .story-line .txt{font-size:8px;color:#cde;line-height:1.8;flex:1}
+    .story-line .em{font-size:20px}
+
+    /* PLAY */
+    .scr-play{flex:1;display:flex;flex-direction:column;background:#0d1a0d}
+    .hud{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;
+      background:rgba(0,0,0,.3)}
+    .hud-lv{font-size:8px;color:#ffd700}
+    .hud-hearts{font-size:14px;letter-spacing:2px}
+    .tracker{display:flex;justify-content:center;align-items:center;gap:8px;padding:6px 8px;
+      background:rgba(0,0,0,.2);font-size:9px;color:#aab}
+    .tracker-count{font-size:14px;color:#ffd700;letter-spacing:1px}
+    .tracker-label{color:#6a8a6a}
+
+    .grid-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:4px}
+    .grid{position:relative;aspect-ratio:1;width:min(90vw,360px);max-height:min(50vh,360px);
+      display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);
+      border:3px solid #2a4a2a;border-radius:4px;overflow:hidden}
+    .cell{border:1px solid rgba(255,255,255,.04)}
+    .cell-a{background:#1e3a1e}
+    .cell-b{background:#234423}
+    .grid-item{position:absolute;display:flex;align-items:center;justify-content:center;
+      font-size:22px;z-index:5;transition:transform .15s,opacity .15s;pointer-events:none}
+    .grid-item.pop{transform:scale(1.4);opacity:0}
+    .dave{position:absolute;z-index:10;transition:left .1s ease-out,top .1s ease-out}
+    .dave canvas{width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
+
+    .dpad{padding:10px 0 16px;display:flex;justify-content:center}
+    .dpad-grid{display:grid;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(3,56px);gap:4px}
+    .dpad-btn{background:#2a3a2a;border:2px solid #4a6a4a;border-radius:8px;color:#8ab;
+      font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+      transition:background .1s}
+    .dpad-btn:active,.dpad-btn.pressed{background:#4a6a4a;border-color:#6a8a6a}
+    .dpad-empty{background:transparent;border:none}
+
+    /* FEEDBACK */
+    .flash{position:absolute;inset:0;z-index:50;pointer-events:none;opacity:0;transition:opacity .15s}
+    .flash.red{background:rgba(220,50,50,.3);opacity:1}
+    .flash.green{background:rgba(50,220,80,.2);opacity:1}
+
+    /* LEVEL COMPLETE / FAIL */
+    .scr-result{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      text-align:center;padding:20px;background:linear-gradient(180deg,#1a1a2e,#16213e)}
+    .scr-result h2{font-size:18px;color:#ffd700;margin-bottom:10px}
+    .scr-result .msg{font-size:9px;color:#99aabb;line-height:2;margin-bottom:24px}
+    .scr-result .stars{font-size:28px;letter-spacing:6px;margin-bottom:20px;color:#ffd700}
+
+    /* GAME OVER */
+    .scr-result .final-score{font-size:10px;color:#ffd700;margin-bottom:20px}
+    .trophy{font-size:48px;margin-bottom:16px}
+
+    /* BUTTONS */
+    .btn{font-family:'Press Start 2P',monospace;font-size:11px;padding:14px 28px;border:3px solid #ffd700;
+      border-radius:8px;background:linear-gradient(180deg,#ffd700,#e6a800);color:#1a1a2e;
+      cursor:pointer;box-shadow:0 4px 0 #997a00;transition:transform .1s,box-shadow .1s}
+    .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #997a00}
+    .btn-small{font-size:9px;padding:12px 20px}
+    .btn-retry{background:linear-gradient(180deg,#ff6b6b,#ee5a24);border-color:#ee5a24;
+      color:#fff;box-shadow:0 4px 0 #b33b00}
+    .btn-retry:active{box-shadow:0 1px 0 #b33b00}
+
+    @media(max-height:640px){
+      .dpad-grid{grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px)}
+    }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const COLS=8,ROWS=8;
+const LEVELS=[
+  {title:"Dave's Morning",
+   story:["Dave wakes up.","He eats a banana.","He drinks coffee.","He reads a book.","He goes to work."],
+   items:["⏰","🍌","☕","📖","💼"]},
+  {title:"Dave at the Park",
+   story:["Dave puts on his hat.","He rides his bike.","He sees a dog.","He eats ice cream.","He takes a photo.","He watches the sunset."],
+   items:["🧢","🚲","🐕","🍦","📸","🌅"]},
+  {title:"Dave Goes Shopping",
+   story:["Dave takes his bag.","He buys bread.","He buys cheese.","He buys apples.","He buys fish.","He pays with his card.","He drives home."],
+   items:["👜","🍞","🧀","🍎","🐟","💳","🚗"]},
+  {title:"Dave's Rainy Day",
+   story:["Dave sees dark clouds.","He puts on his coat.","He takes his umbrella.","He walks to the bus stop.","He goes to the library.","He reads a magazine.","He drinks hot tea.","He goes home to sleep."],
+   items:["🌧️","🧥","☂️","🚌","📚","📰","🍵","🛏️"]},
+  {title:"Dave's Birthday",
+   story:["Dave opens a letter.","He bakes a cake.","He buys balloons.","He wraps a gift.","He cleans the house.","He plays music.","His friends arrive.","They eat pizza.","They play games."],
+   items:["✉️","🎂","🎈","🎁","🧹","🎵","👋","🍕","🎮"]},
+  {title:"Dave's Vacation",
+   story:["Dave packs his bag.","He goes to the airport.","He shows his passport.","He sits on the plane.","He arrives at the beach.","He puts on sunglasses.","He goes swimming.","He finds a shell.","He eats seafood.","He writes a postcard."],
+   items:["🧳","✈️","🛂","💺","🏖️","🕶️","🏊","🐚","🦐","✏️"]}
+];
+
+let S={screen:'title',level:0,lives:3,collected:0,px:3,py:6,items:[],moveInt:null,stars:[]};
+const $=id=>document.getElementById(id),app=document.getElementById('app');
+
+// ========== DAVE SPRITE ==========
+function drawDave(cv){
+  const c=cv.getContext('2d');c.clearRect(0,0,16,16);
+  c.fillStyle='#654321';c.fillRect(5,0,6,2);
+  c.fillStyle='#FFD6A0';c.fillRect(5,2,6,5);
+  c.fillStyle='#222';c.fillRect(6,3,2,2);c.fillRect(9,3,2,2);
+  c.fillStyle='#e74c3c';c.fillRect(7,5,2,1);
+  c.fillStyle='#3498db';c.fillRect(4,7,8,4);c.fillRect(2,7,2,3);c.fillRect(12,7,2,3);
+  c.fillStyle='#8B6914';c.fillRect(5,11,3,3);c.fillRect(8,11,3,3);
+  c.fillStyle='#333';c.fillRect(4,14,4,2);c.fillRect(8,14,4,2);
+}
+
+// ========== AUDIO ==========
+let audioCtx=null;
+function initAudio(){
+  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended')audioCtx.resume();
+}
+function sfx(type){
+  if(!audioCtx)return;
+  try{
+    const t=audioCtx.currentTime;
+    const osc=audioCtx.createOscillator();
+    const g=audioCtx.createGain();
+    osc.connect(g);g.connect(audioCtx.destination);
+    if(type==='move'){
+      osc.type='square';osc.frequency.value=220;
+      g.gain.setValueAtTime(0.04,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.04);
+      osc.start(t);osc.stop(t+0.05);
+    }else if(type==='correct'){
+      osc.type='square';
+      osc.frequency.setValueAtTime(523,t);
+      osc.frequency.setValueAtTime(659,t+0.08);
+      osc.frequency.setValueAtTime(784,t+0.16);
+      g.gain.setValueAtTime(0.08,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+      osc.start(t);osc.stop(t+0.3);
+    }else if(type==='wrong'){
+      osc.type='sawtooth';
+      osc.frequency.setValueAtTime(200,t);
+      osc.frequency.linearRampToValueAtTime(100,t+0.25);
+      g.gain.setValueAtTime(0.08,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+      osc.start(t);osc.stop(t+0.3);
+    }else if(type==='fail'){
+      osc.type='sawtooth';
+      osc.frequency.setValueAtTime(300,t);
+      osc.frequency.setValueAtTime(250,t+0.15);
+      osc.frequency.setValueAtTime(200,t+0.3);
+      osc.frequency.linearRampToValueAtTime(80,t+0.5);
+      g.gain.setValueAtTime(0.07,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.55);
+      osc.start(t);osc.stop(t+0.55);
+    }else if(type==='win'){
+      osc.type='square';
+      osc.frequency.setValueAtTime(523,t);
+      osc.frequency.setValueAtTime(659,t+0.1);
+      osc.frequency.setValueAtTime(784,t+0.2);
+      osc.frequency.setValueAtTime(1047,t+0.3);
+      g.gain.setValueAtTime(0.07,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+      osc.start(t);osc.stop(t+0.5);
+    }
+  }catch(e){}
+}
+
+// ========== SCREENS ==========
+function renderTitle(){
+  S.screen='title';
+  app.innerHTML=`<div class="scr-title">
+    <h1>DAVE'S<br>DAY</h1>
+    <p class="sub">Collect Items - Learn Words!</p>
+    <p class="desc">Read the story.<br>Collect items in order.<br>Don't make mistakes!</p>
+    <button class="btn" onclick="goStory()">START</button></div>`;
+}
+
+function renderStory(){
+  S.screen='story';
+  const lv=LEVELS[S.level];
+  let lines='';
+  lv.story.forEach((txt,i)=>{
+    lines+=`<div class="story-line"><span class="num">${i+1}.</span><span class="txt">${txt}</span><span class="em">${lv.items[i]}</span></div>`;
+  });
+  app.innerHTML=`<div class="scr-story">
+    <p class="lv">Level ${S.level+1} of 6</p>
+    <h2>${lv.title}</h2>
+    <div class="story-lines">${lines}</div>
+    <div style="text-align:center;padding:12px 0">
+      <button class="btn" onclick="startLevel()">GO!</button>
+    </div></div>`;
+}
+
+function renderPlay(){
+  S.screen='play';
+  const lv=LEVELS[S.level];
+  // Tracker (count only — no item hints!)
+  const tracker=`<span class="tracker-label">Items:</span> <span class="tracker-count">${S.collected} / ${lv.items.length}</span>`;
+  // Grid cells
+  let cells='';
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+    cells+=`<div class="cell cell-${(x+y)%2===0?'a':'b'}"></div>`;
+  }
+  // Hearts
+  let hearts='';
+  for(let i=0;i<3;i++)hearts+=i<S.lives?'❤️':'🖤';
+
+  app.innerHTML=`<div class="scr-play">
+    <div class="hud"><span class="hud-lv">Lv.${S.level+1}</span><span class="hud-hearts">${hearts}</span></div>
+    <div class="tracker" id="tracker">${tracker}</div>
+    <div class="grid-wrap"><div class="grid" id="grid">${cells}</div></div>
+    <div class="dpad"><div class="dpad-grid">
+      <div class="dpad-empty"></div>
+      <div class="dpad-btn" data-dx="0" data-dy="-1">▲</div>
+      <div class="dpad-empty"></div>
+      <div class="dpad-btn" data-dx="-1" data-dy="0">◀</div>
+      <div class="dpad-empty"></div>
+      <div class="dpad-btn" data-dx="1" data-dy="0">▶</div>
+      <div class="dpad-empty"></div>
+      <div class="dpad-btn" data-dx="0" data-dy="1">▼</div>
+      <div class="dpad-empty"></div>
+    </div></div>
+    <div class="flash" id="flash"></div></div>`;
+
+  const grid=$('grid');
+  // Place items
+  S.items.forEach(it=>{
+    if(it.collected)return;
+    const el=document.createElement('div');
+    el.className='grid-item';el.id='item-'+it.id;
+    el.textContent=it.emoji;
+    posEl(el,it.x,it.y,grid);
+    grid.appendChild(el);
+  });
+  // Place dave
+  const dave=document.createElement('div');
+  dave.className='dave';dave.id='dave';
+  const cv=document.createElement('canvas');cv.width=16;cv.height=16;
+  dave.appendChild(cv);
+  posEl(dave,S.px,S.py,grid);
+  grid.appendChild(dave);
+  drawDave(cv);
+
+  // D-pad input
+  document.querySelectorAll('.dpad-btn').forEach(btn=>{
+    const dx=+btn.dataset.dx,dy=+btn.dataset.dy;
+    btn.addEventListener('pointerdown',e=>{e.preventDefault();btn.classList.add('pressed');
+      move(dx,dy);S.moveInt=setInterval(()=>move(dx,dy),140);});
+    const stop=()=>{btn.classList.remove('pressed');clearInterval(S.moveInt);S.moveInt=null;};
+    btn.addEventListener('pointerup',stop);
+    btn.addEventListener('pointerleave',stop);
+    btn.addEventListener('pointercancel',stop);
+  });
+}
+
+function posEl(el,x,y,grid){
+  const pct=100/COLS;
+  el.style.left=(x*pct)+'%';el.style.top=(y*pct)+'%';
+  el.style.width=pct+'%';el.style.height=pct+'%';
+}
+
+function updateDavePos(){
+  const dave=$('dave');
+  if(!dave)return;
+  const pct=100/COLS;
+  dave.style.left=(S.px*pct)+'%';dave.style.top=(S.py*pct)+'%';
+}
+
+function updateTracker(){
+  const lv=LEVELS[S.level];
+  const t=$('tracker');if(!t)return;
+  t.innerHTML=`<span class="tracker-label">Items:</span> <span class="tracker-count">${S.collected} / ${lv.items.length}</span>`;
+}
+
+function updateHearts(){
+  const el=document.querySelector('.hud-hearts');if(!el)return;
+  let h='';for(let i=0;i<3;i++)h+=i<S.lives?'❤️':'🖤';
+  el.innerHTML=h;
+}
+
+function flash(color){
+  const f=$('flash');if(!f)return;
+  f.className='flash '+color;
+  setTimeout(()=>f.className='flash',250);
+}
+
+// ========== GAME LOGIC ==========
+function goStory(){initAudio();S.level=0;S.stars=[];renderStory();}
+
+function startLevel(){
+  const lv=LEVELS[S.level];
+  S.lives=3;S.collected=0;S.px=3;S.py=6;
+  // Place items randomly
+  const used=new Set();used.add(S.px+','+S.py);
+  S.items=lv.items.map((emoji,i)=>{
+    let x,y;
+    do{x=Math.floor(Math.random()*COLS);y=Math.floor(Math.random()*ROWS);}
+    while(used.has(x+','+y));
+    used.add(x+','+y);
+    return{id:i,emoji,x,y,collected:false};
+  });
+  renderPlay();
+}
+
+function move(dx,dy){
+  if(S.screen!=='play')return;
+  const nx=S.px+dx,ny=S.py+dy;
+  if(nx<0||nx>=COLS||ny<0||ny>=ROWS)return;
+  S.px=nx;S.py=ny;
+  updateDavePos();
+  // Check item pickup
+  const lv=LEVELS[S.level];
+  const item=S.items.find(it=>!it.collected&&it.x===nx&&it.y===ny);
+  if(item){
+    if(item.id===S.collected){
+      // CORRECT
+      item.collected=true;
+      S.collected++;
+      flash('green');sfx('correct');
+      const el=$('item-'+item.id);
+      if(el){el.classList.add('pop');setTimeout(()=>el.remove(),200);}
+      updateTracker();
+      if(S.collected>=lv.items.length){
+        clearInterval(S.moveInt);S.moveInt=null;
+        const st=S.lives>=3?3:S.lives>=2?2:1;
+        S.stars.push(st);
+        setTimeout(()=>{sfx('win');renderWin(st);},500);
+      }
+    }else{
+      // WRONG
+      S.lives--;
+      flash('red');sfx('wrong');
+      updateHearts();
+      if(S.lives<=0){
+        clearInterval(S.moveInt);S.moveInt=null;
+        setTimeout(()=>{sfx('fail');renderFail();},600);
+      }
+    }
+  }else{
+    sfx('move');
+  }
+}
+
+function renderWin(st){
+  S.screen='result';
+  const lv=LEVELS[S.level];
+  const starsStr='★'.repeat(st)+'☆'.repeat(3-st);
+  const isLast=S.level>=LEVELS.length-1;
+  app.innerHTML=`<div class="scr-result">
+    <h2>Level Complete!</h2>
+    <p class="msg">${lv.title}</p>
+    <div class="stars">${starsStr}</div>
+    <button class="btn" onclick="${isLast?'renderGameOver()':'nextLevel()'}">
+      ${isLast?'FINISH':'NEXT LEVEL'}</button></div>`;
+}
+
+function renderFail(){
+  S.screen='result';
+  app.innerHTML=`<div class="scr-result">
+    <h2>Oops!</h2>
+    <p class="msg">You made 3 mistakes.<br>Read the story again!</p>
+    <button class="btn-retry btn" onclick="renderStory()" style="margin-bottom:12px">TRY AGAIN</button>
+    </div>`;
+}
+
+function nextLevel(){S.level++;renderStory();}
+
+function renderGameOver(){
+  S.screen='result';
+  let rows='';
+  LEVELS.forEach((lv,i)=>{
+    const st=S.stars[i]||0;
+    rows+=`<div style="display:flex;justify-content:space-between;align-items:center;
+      background:rgba(255,255,255,.05);padding:8px 12px;border-radius:6px;margin-bottom:6px">
+      <span style="font-size:8px;color:#aab">${lv.items[0]} ${lv.title}</span>
+      <span style="font-size:12px;color:#ffd700">${'★'.repeat(st)+'☆'.repeat(3-st)}</span></div>`;
+  });
+  const total=S.stars.reduce((a,b)=>a+b,0);
+  app.innerHTML=`<div class="scr-result">
+    <div class="trophy">🏆</div>
+    <h2>Congratulations!</h2>
+    <p class="msg">You finished Dave's Day!</p>
+    <div class="final-score">${total} / ${LEVELS.length*3} Stars</div>
+    <div style="width:100%;max-width:300px;margin-bottom:20px">${rows}</div>
+    <button class="btn btn-small" onclick="S.level=0;S.stars=[];renderTitle()">PLAY AGAIN</button></div>`;
+}
+
+// ========== KEYBOARD INPUT ==========
+document.addEventListener('keydown',e=>{
+  if(S.screen!=='play')return;
+  const map={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],
+    w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]};
+  const dir=map[e.key];
+  if(dir){e.preventDefault();move(dir[0],dir[1]);}
+});
+
+// ========== PARENT SCOREBOARD BRIDGE ==========
+// When embedded as an iframe in the ESL Games site, the parent window sends
+// us the player's display name, and we post the final score back on game over.
+const SITE = { name: null };
+window.addEventListener('message', (ev) => {
+  if (ev && ev.data && ev.data.type === 'esl:player-name' && typeof ev.data.name === 'string') {
+    SITE.name = ev.data.name.slice(0, 15);
+  }
+});
+// Announce we're alive so the parent can reply with the name.
+try { window.parent && window.parent.postMessage({ type: 'esl:ready', game: 'daves-day' }, '*'); } catch (e) {}
+
+// Wrap renderGameOver so we also submit the final score.
+const _origRenderGameOver = renderGameOver;
+renderGameOver = function() {
+  const total = S.stars.reduce((a,b)=>a+b,0);
+  try {
+    window.parent && window.parent.postMessage({
+      type: 'esl:score',
+      game: 'daves-day',
+      score: total,
+      max: LEVELS.length * 3,
+      name: SITE.name || null,
+    }, '*');
+  } catch (e) {}
+  return _origRenderGameOver.apply(this, arguments);
+};
+
+// ========== INIT ==========
+renderTitle();
+</script>
+</body>
+</html>

@@ -2,6 +2,7 @@ import { Routes, Route, Link } from 'react-router-dom';
 import JapaneseHintToggle from './components/JapaneseHintToggle';
 import HintText from './components/HintText';
 import GameShell from './components/GameShell';
+import PixelThumb from './components/PixelThumb';
 import { useHints } from './lib/hint-context';
 import { useUser } from './lib/user-context';
 import { GAME_BG, type GameBgKey } from './lib/game-bg';
@@ -10,6 +11,8 @@ import SupermarketCheckout from './games/SupermarketCheckout';
 import FixTheText from './games/FixTheText';
 import CalendarDrop from './games/CalendarDrop';
 import SpeedFind from './games/SpeedFind';
+import DavesDay from './games/DavesDay';
+import GrammarQuest from './games/GrammarQuest';
 
 type GameMeta = {
   path: string;
@@ -19,7 +22,10 @@ type GameMeta = {
   topic: string;
   topicJa: string;
   minutes: string;
-  bgKey: GameBgKey;
+  /** Either a webp background key or a pixel sprite identifier. */
+  thumb:
+    | { kind: 'webp'; bgKey: GameBgKey }
+    | { kind: 'pixel'; sprite: 'dave' | 'castle' };
   /** Card tilt in degrees — alternating left/right for a gallery feel. */
   tilt: number;
 };
@@ -33,7 +39,7 @@ const GAMES: GameMeta[] = [
     topic: 'Conjunctions: and / but / because / so',
     topicJa: '接続詞の練習',
     minutes: '3–5 min',
-    bgKey: 'mashup',
+    thumb: { kind: 'webp', bgKey: 'mashup' },
     tilt: -2.5,
   },
   {
@@ -44,7 +50,7 @@ const GAMES: GameMeta[] = [
     topic: 'Countable / Uncountable · How much / How many',
     topicJa: '数えられる名詞と数えられない名詞',
     minutes: '4–5 min',
-    bgKey: 'checkout',
+    thumb: { kind: 'webp', bgKey: 'checkout' },
     tilt: 2,
   },
   {
@@ -55,7 +61,7 @@ const GAMES: GameMeta[] = [
     topic: 'Capital letters & full stops',
     topicJa: '大文字とピリオド',
     minutes: '3–4 min',
-    bgKey: 'fixtext',
+    thumb: { kind: 'webp', bgKey: 'fixtext' },
     tilt: 2.5,
   },
   {
@@ -66,7 +72,7 @@ const GAMES: GameMeta[] = [
     topic: 'Prepositions of time: in / on / at',
     topicJa: '時を表す前置詞',
     minutes: '2–3 min',
-    bgKey: 'calendar',
+    thumb: { kind: 'webp', bgKey: 'calendar' },
     tilt: -2,
   },
   {
@@ -77,8 +83,30 @@ const GAMES: GameMeta[] = [
     topic: 'Scanning & skimming real-world texts',
     topicJa: 'スキャニング練習',
     minutes: '4–5 min',
-    bgKey: 'speedfind',
+    thumb: { kind: 'webp', bgKey: 'speedfind' },
     tilt: -1.5,
+  },
+  {
+    path: '/daves-day',
+    icon: '🧍',
+    name: "Dave's Day",
+    nameJa: 'デイブの一日',
+    topic: 'Daily vocabulary · read & collect (8-bit)',
+    topicJa: '日常語彙・読んで集める',
+    minutes: '5–10 min',
+    thumb: { kind: 'pixel', sprite: 'dave' },
+    tilt: 1.5,
+  },
+  {
+    path: '/grammar-quest',
+    icon: '🏰',
+    name: 'Grammar Quest',
+    nameJa: 'グラマー・クエスト',
+    topic: 'Past tense with did / didn\u2019t / couldn\u2019t',
+    topicJa: '過去形（did / didn\u2019t / couldn\u2019t）',
+    minutes: '5–10 min',
+    thumb: { kind: 'pixel', sprite: 'castle' },
+    tilt: -2,
   },
 ];
 
@@ -127,13 +155,22 @@ function Home() {
 
             {/* Angled "canvas" thumbnail — decorative only. */}
             <div className="mt-4 flex justify-center" aria-hidden="true">
-              <div
-                className="w-36 h-24 sm:w-44 sm:h-28 rounded-md bg-center bg-cover shadow-lg ring-1 ring-slate-300/70 border-[3px] border-white"
-                style={{
-                  backgroundImage: `url('${GAME_BG[g.bgKey]}')`,
-                  transform: `rotate(${g.tilt}deg)`,
-                }}
-              />
+              {g.thumb.kind === 'webp' ? (
+                <div
+                  className="w-36 h-24 sm:w-44 sm:h-28 rounded-md bg-center bg-cover shadow-lg ring-1 ring-slate-300/70 border-[3px] border-white"
+                  style={{
+                    backgroundImage: `url('${GAME_BG[g.thumb.bgKey]}')`,
+                    transform: `rotate(${g.tilt}deg)`,
+                  }}
+                />
+              ) : (
+                <div
+                  className="w-36 h-24 sm:w-44 sm:h-28 rounded-md shadow-lg ring-1 ring-slate-300/70 border-[3px] border-white flex items-center justify-center bg-slate-900"
+                  style={{ transform: `rotate(${g.tilt}deg)` }}
+                >
+                  <PixelThumb which={g.thumb.sprite} size={72} />
+                </div>
+              )}
             </div>
           </Link>
         ))}
@@ -160,6 +197,8 @@ export default function App() {
       <Route path="/fix-text" element={<FixTheText />} />
       <Route path="/calendar-drop" element={<CalendarDrop />} />
       <Route path="/speed-find" element={<SpeedFind />} />
+      <Route path="/daves-day" element={<DavesDay />} />
+      <Route path="/grammar-quest" element={<GrammarQuest />} />
       <Route path="*" element={<Placeholder title="Not found" titleJa="見つかりません" />} />
     </Routes>
   );

@@ -11,6 +11,7 @@ import { shuffle } from '../../lib/shuffle';
 import { useUser } from '../../lib/user-context';
 import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
 import { GAME_BG } from '../../lib/game-bg';
+import { sfx } from '../../lib/sfx';
 import {
   PAIRS,
   CONJUNCTIONS,
@@ -135,6 +136,7 @@ export default function SentenceMashup() {
     const pair = pairs[idx];
     const correctness = correctnessFor(pair, conj);
     setAnswers((prev) => [...prev, { id: pair.id, picked: conj, correctness }]);
+    sfx(correctness === 'best' ? 'correct' : correctness === 'acceptable' ? 'pick' : 'wrong');
   }
 
   function next() {
@@ -149,6 +151,7 @@ export default function SentenceMashup() {
       }
       removeKey(RESUME_KEY);
       setPhase('results');
+      sfx(finalScore >= Math.ceil(ROUND_SIZE * 0.7) ? 'win' : 'fail');
     } else {
       setIdx(idx + 1);
       setPickedConj(null);

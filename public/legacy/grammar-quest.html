@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <title>Grammar Quest - The Past Tense Adventure</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* ===== RESET & GLOBAL ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a0a14;
+            font-family: 'Press Start 2P', monospace;
+            overflow: hidden;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        /* ===== GAME CONTAINER ===== */
+        #game {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            background: #1a1a2e;
+        }
+
+        #screen-content {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #transition-overlay {
+            position: absolute;
+            inset: 0;
+            background: #000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+        }
+        #transition-overlay.active { opacity: 1; }
+
+        /* ===== TITLE SCREEN ===== */
+        .title-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+
+        .game-title {
+            font-size: 28px;
+            color: #ffd700;
+            text-shadow: 3px 3px 0 #b8860b, 0 0 20px rgba(255,215,0,0.3);
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .game-subtitle {
+            font-size: 10px;
+            color: #88aacc;
+            margin-bottom: 40px;
+        }
+
+        .title-divider {
+            width: 200px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #ffd700, transparent);
+            margin-bottom: 30px;
+        }
+
+        .title-story {
+            font-size: 9px;
+            color: #aabbcc;
+            line-height: 2;
+            margin-bottom: 40px;
+        }
+
+        .title-hint {
+            font-size: 7px;
+            color: #556677;
+            margin-top: 24px;
+        }
+
+        /* ===== MAP SCREEN ===== */
+        .map-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(180deg, #1a3a2a 0%, #0d2818 40%, #1a2a1a 100%);
+            padding: 16px;
+        }
+
+        .map-header {
+            text-align: center;
+            padding: 16px 0 8px;
+        }
+        .map-header h2 {
+            font-size: 16px;
+            color: #ffd700;
+            text-shadow: 2px 2px 0 #665500;
+        }
+        .map-header p {
+            font-size: 8px;
+            color: #7a9a6a;
+            margin-top: 6px;
+        }
+
+        .map-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            padding: 10px 0;
+        }
+
+        .map-line {
+            width: 4px;
+            flex: 1 1 20px;
+            min-height: 12px;
+            max-height: 50px;
+            background: repeating-linear-gradient(180deg, #5a7a4a 0px, #5a7a4a 4px, transparent 4px, transparent 8px);
+        }
+
+        .map-node {
+            width: 85%;
+            max-width: 300px;
+            padding: 10px 14px;
+            border: 3px solid #3a5a3a;
+            border-radius: 12px;
+            background: #1a2a1a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .map-node.locked {
+            opacity: 0.4;
+            pointer-events: none;
+            border-color: #333;
+        }
+
+        .map-node.active {
+            border-color: #ffd700;
+            box-shadow: 0 0 15px rgba(255,215,0,0.3), inset 0 0 15px rgba(255,215,0,0.05);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .map-node.completed {
+            border-color: #4ade80;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .node-icon { font-size: 24px; }
+        .node-info { flex: 1; }
+        .node-label {
+            font-size: 9px;
+            color: #ddd;
+            margin-bottom: 4px;
+        }
+        .node-status {
+            font-size: 7px;
+            color: #888;
+        }
+        .node-stars {
+            font-size: 10px;
+            color: #ffd700;
+            letter-spacing: 2px;
+        }
+        .node-lock { font-size: 14px; }
+
+        .map-footer {
+            text-align: center;
+            padding: 12px 0;
+        }
+        .map-footer p {
+            font-size: 7px;
+            color: #5a7a5a;
+            animation: blink 1.5s step-end infinite;
+        }
+
+        /* ===== ENCOUNTER SCREEN ===== */
+        .encounter-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .encounter-top {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px 16px;
+            min-height: 180px;
+            justify-content: center;
+        }
+
+        .npc-canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            width: 120px;
+            height: 120px;
+            border: 3px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .npc-nameplate {
+            margin-top: 10px;
+            font-size: 10px;
+            color: #fff;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.3);
+            padding: 4px 14px;
+            border-radius: 4px;
+        }
+
+        .encounter-bottom {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0 12px 12px;
+            gap: 10px;
+        }
+
+        .dialogue-box {
+            background: #f8f8f0;
+            border: 3px solid #383838;
+            border-radius: 10px;
+            padding: 16px;
+            min-height: 110px;
+            cursor: pointer;
+            position: relative;
+            box-shadow: inset 0 0 0 2px #e8e8e0, 0 4px 12px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .dialogue-box.grammar-note-box {
+            background: #fffde0;
+            border-color: #b8a000;
+            box-shadow: inset 0 0 0 2px #fff8b0, 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        #dialogue-text {
+            font-size: 10px;
+            color: #222;
+            line-height: 2;
+            min-height: 40px;
+        }
+
+        .tap-indicator {
+            align-self: flex-end;
+            font-size: 10px;
+            color: #666;
+            animation: blink 0.8s step-end infinite;
+            display: none;
+        }
+
+        .options-area {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .option-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            padding: 16px;
+            border: 3px solid #383838;
+            border-radius: 10px;
+            background: #fff;
+            color: #222;
+            cursor: pointer;
+            line-height: 1.8;
+            text-align: left;
+            transition: all 0.15s;
+            box-shadow: 0 3px 0 #ccc;
+            position: relative;
+        }
+
+        .option-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #ccc;
+        }
+
+        .option-btn .verb-highlight {
+            font-weight: bold;
+            border-bottom: 2px solid currentColor;
+        }
+
+        .option-btn.correct {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+            animation: correctBounce 0.4s ease;
+            box-shadow: 0 3px 0 #1e7e34;
+        }
+
+        .option-btn.wrong {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+            animation: shake 0.4s ease;
+            box-shadow: 0 3px 0 #bd2130;
+        }
+
+        .option-btn.dimmed {
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        .option-label {
+            position: absolute;
+            top: -1px;
+            left: 10px;
+            font-size: 7px;
+            color: #999;
+        }
+
+        /* ===== VICTORY SCREEN ===== */
+        .victory-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            text-align: center;
+            padding: 20px 20px 30px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            gap: 16px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .victory-title {
+            font-size: 18px;
+            color: #ffd700;
+            text-shadow: 2px 2px 0 #b8860b;
+        }
+
+        .victory-subtitle {
+            font-size: 9px;
+            color: #88aacc;
+        }
+
+        .results-list {
+            width: 100%;
+            max-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .result-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.05);
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .result-location {
+            font-size: 8px;
+            color: #aaa;
+        }
+
+        .result-stars {
+            font-size: 10px;
+            color: #ffd700;
+            letter-spacing: 2px;
+        }
+
+        .grammar-recap {
+            background: rgba(255,253,200,0.1);
+            border: 2px solid rgba(255,215,0,0.3);
+            border-radius: 10px;
+            padding: 16px;
+            max-width: 320px;
+            width: 100%;
+        }
+
+        .grammar-recap h3 {
+            font-size: 10px;
+            color: #ffd700;
+            margin-bottom: 12px;
+        }
+
+        .grammar-recap .rule {
+            font-size: 11px;
+            color: #fff;
+            margin-bottom: 14px;
+            line-height: 1.8;
+        }
+
+        .grammar-recap .examples {
+            font-size: 8px;
+            line-height: 2.4;
+            color: #ccc;
+        }
+
+        .grammar-recap .correct { color: #4ade80; }
+        .grammar-recap .wrong { color: #ef4444; text-decoration: line-through; }
+
+        /* ===== COMMON COMPONENTS ===== */
+        .pixel-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            padding: 16px 32px;
+            border: 3px solid #ffd700;
+            border-radius: 8px;
+            background: linear-gradient(180deg, #ffd700 0%, #ffb700 100%);
+            color: #1a1a2e;
+            cursor: pointer;
+            text-shadow: 1px 1px 0 rgba(255,255,255,0.3);
+            box-shadow: 0 4px 0 #b8860b;
+            transition: all 0.1s;
+        }
+
+        .pixel-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #b8860b;
+        }
+
+        .continue-btn {
+            width: 100%;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            padding: 14px;
+            border: 3px solid #4a9eff;
+            border-radius: 10px;
+            background: #1a3a5e;
+            color: #88ccff;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #0a1a3e;
+            transition: all 0.1s;
+        }
+        .continue-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #0a1a3e;
+        }
+
+        /* ===== MUTE BUTTON ===== */
+        .mute-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 50;
+            background: rgba(0,0,0,0.4);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 16px;
+            width: 34px;
+            height: 34px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            line-height: 1;
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(255,215,0,0.2); }
+            50% { box-shadow: 0 0 25px rgba(255,215,0,0.5), inset 0 0 15px rgba(255,215,0,0.05); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+
+        @keyframes correctBounce {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.4s ease;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-height: 600px) {
+            .encounter-top { padding: 12px 16px 8px; min-height: 140px; }
+            .npc-canvas { width: 90px; height: 90px; }
+            .dialogue-box { min-height: 80px; padding: 12px; }
+            #dialogue-text { font-size: 9px; }
+            .option-btn { padding: 12px; font-size: 8px; }
+            .game-title { font-size: 22px; }
+        }
+
+        @media (min-width: 481px) {
+            #game {
+                border-radius: 16px;
+                overflow: hidden;
+                height: min(100dvh, 750px);
+                height: min(100vh, 750px);
+                box-shadow: 0 0 40px rgba(0,0,0,0.5);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <div id="screen-content"></div>
+        <button id="mute-btn" class="mute-btn" onclick="toggleMute()">&#x1F50A;</button>
+        <div id="transition-overlay"></div>
+    </div>
+
+    <script>
+    /* =============================================================
+       GRAMMAR QUEST - The Past Tense Adventure
+       A game for practicing "did/didn't + base form" grammar
+       ============================================================= */
+
+    // ===== ENCOUNTER DATA =====
+    const encounters = [
+        {
+            id: 'riverside',
+            location: 'Riverside',
+            icon: '\u{1F3A3}',
+            npcName: 'Fisherman Pete',
+            npcId: 'fisherman',
+            bgStyle: 'linear-gradient(180deg, #1a4a5a 0%, #0d2818 100%)',
+            voicePitch: 130,
+            dialogues: [
+                "Ah ha! A STRANGER in Verbton!",
+                "I had 10 beautiful fish this morning...",
+                "Golden ones! Rainbow ones! My BEST fish!",
+                "And now they're ALL GONE!",
+                "You took them, didn't you?!"
+            ],
+            responseType: 'deny',
+            options: [
+                { text: "No way! I didn't take your fish!", verb: "take", correct: true },
+                { text: "No way! I didn't took your fish!", verb: "took", correct: false }
+            ],
+            npcCorrectResponse: "Hmm... your English is too good for a fish thief. You may pass!",
+            npcWrongResponse: "Wait... that doesn't sound right. Think about it and try again!",
+            grammarTitle: "Grammar Note",
+            grammarLines: [
+                'When we use "didn\'t", the main verb',
+                'uses its BASE FORM.',
+                '',
+                '"Didn\'t" already shows past tense!',
+                '',
+                '\u2713 didn\'t  +  take',
+                '\u2717 didn\'t  +  took'
+            ]
+        },
+        {
+            id: 'village',
+            location: 'Village Square',
+            icon: '\u{1F3D8}\u{FE0F}',
+            npcName: 'Baker Miku',
+            npcId: 'baker',
+            bgStyle: 'linear-gradient(180deg, #4a3628 0%, #2d1f14 100%)',
+            voicePitch: 260,
+            dialogues: [
+                "Oh! Another visitor!",
+                "I baked 20 special cakes for the festival.",
+                "Chocolate! Strawberry! Cream!",
+                "But wait... are those CRUMBS on your face?!",
+                "You ate my cakes, didn't you?!"
+            ],
+            responseType: 'confirm',
+            options: [
+                { text: "...OK fine, I did ate them. Sorry!", verb: "ate", correct: false },
+                { text: "...OK fine, I did eat them. Sorry!", verb: "eat", correct: true }
+            ],
+            npcCorrectResponse: "Well... at least your grammar is delicious! I forgive you.",
+            npcWrongResponse: "Hmm, something about that doesn't taste right... Say it again!",
+            grammarTitle: "Grammar Note",
+            grammarLines: [
+                'When we use "did" to confirm,',
+                'the verb also stays in BASE FORM.',
+                '',
+                '"Did" carries the past tense!',
+                '',
+                '\u2713 did  +  eat',
+                '\u2717 did  +  ate'
+            ]
+        },
+        {
+            id: 'castle',
+            location: 'Castle Gate',
+            icon: '\u{1F3F0}',
+            npcName: 'Guard Captain Rex',
+            npcId: 'guard',
+            bgStyle: 'linear-gradient(180deg, #2a2a3e 0%, #1a1a28 100%)',
+            voicePitch: 95,
+            dialogues: [
+                "HALT! Who goes there?!",
+                "The castle gate was fine yesterday.",
+                "Now it's COMPLETELY DESTROYED!",
+                "The king is VERY angry!",
+                "You broke it, didn't you?!"
+            ],
+            responseType: 'deny',
+            options: [
+                { text: "I didn't break your gate!", verb: "break", correct: true },
+                { text: "I didn't broke your gate!", verb: "broke", correct: false }
+            ],
+            npcCorrectResponse: "...Your grammar is flawless. The king will see you now!",
+            npcWrongResponse: "That doesn't sound right, stranger! Try again!",
+            grammarTitle: "Grammar Note",
+            grammarLines: [
+                'Remember the rule:',
+                '"didn\'t" + BASE FORM!',
+                '',
+                'The past tense lives inside "didn\'t".',
+                'The main verb stays simple!',
+                '',
+                '\u2713 didn\'t  +  break',
+                '\u2717 didn\'t  +  broke'
+            ]
+        },
+        {
+            id: 'throne',
+            location: 'Throne Room',
+            icon: '\u{1F451}',
+            npcName: 'King Vernon',
+            npcId: 'king',
+            bgStyle: 'linear-gradient(180deg, #3a1a4a 0%, #1a0a2a 100%)',
+            voicePitch: 170,
+            dialogues: [
+                "So... YOU are the famous traveler!",
+                "My servants told me EVERYTHING.",
+                "They say someone saw my SECRET treasure room!",
+                "Only I have the key... but the door WAS open!",
+                "You could see inside, couldn't you?!"
+            ],
+            responseType: 'deny',
+            options: [
+                { text: "I couldn't see anything, Your Majesty!", verb: "see", correct: true },
+                { text: "I couldn't saw anything, Your Majesty!", verb: "saw", correct: false }
+            ],
+            npcCorrectResponse: "Impressive! Your grammar is fit for royalty. Welcome to my court!",
+            npcWrongResponse: "That is NOT proper grammar for my royal court! Try again!",
+            grammarTitle: "Grammar Note",
+            grammarLines: [
+                '"Could" is the past of "can".',
+                'When we use "couldn\'t", the verb',
+                'also uses its BASE FORM!',
+                '',
+                '"Couldn\'t" already shows past tense!',
+                '',
+                '\u2713 couldn\'t  +  see',
+                '\u2717 couldn\'t  +  saw'
+            ]
+        }
+    ];
+
+    // ===== GAME STATE =====
+    const game = {
+        screen: 'title',
+        encounterIndex: -1,
+        dialogueIndex: 0,
+        phase: 'dialogue',
+        attempts: [0, 0, 0, 0],
+        completed: [false, false, false, false],
+        currentVoicePitch: 0,
+        shuffledOptions: [],
+        typing: false,
+        typingTimer: null,
+        fullText: '',
+        textEl: null,
+        onTypeComplete: null,
+        inputLocked: false,
+    };
+
+    function lockInput(ms) {
+        game.inputLocked = true;
+        setTimeout(() => { game.inputLocked = false; }, ms || 350);
+    }
+
+    // ===== SPRITE DRAWING =====
+    // Each NPC is drawn on a 24x24 canvas, then CSS scales it up with pixelation
+
+    function drawNPC(canvas, npcId) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 24, 24);
+
+        const draw = {
+            fisherman() {
+                // Hat brim
+                ctx.fillStyle = '#3355AA';
+                ctx.fillRect(3, 1, 18, 3);
+                ctx.fillRect(7, 0, 10, 1);
+                // Face
+                ctx.fillStyle = '#FFD6A0';
+                ctx.fillRect(7, 4, 10, 7);
+                // Eyes
+                ctx.fillStyle = '#222';
+                ctx.fillRect(9, 6, 2, 2);
+                ctx.fillRect(13, 6, 2, 2);
+                // Mouth
+                ctx.fillStyle = '#c0392b';
+                ctx.fillRect(10, 9, 4, 1);
+                // Body
+                ctx.fillStyle = '#2288CC';
+                ctx.fillRect(5, 11, 14, 6);
+                // Belt
+                ctx.fillStyle = '#554433';
+                ctx.fillRect(5, 16, 14, 1);
+                // Pants
+                ctx.fillStyle = '#445566';
+                ctx.fillRect(6, 17, 5, 5);
+                ctx.fillRect(13, 17, 5, 5);
+                // Shoes
+                ctx.fillStyle = '#333';
+                ctx.fillRect(5, 22, 6, 2);
+                ctx.fillRect(13, 22, 6, 2);
+                // Fishing rod
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(21, 2, 1, 13);
+                ctx.fillRect(20, 1, 3, 1);
+                // Line
+                ctx.fillStyle = '#aaa';
+                ctx.fillRect(22, 2, 1, 8);
+                ctx.fillRect(21, 10, 1, 1);
+            },
+            baker() {
+                // Chef hat
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(8, 0, 8, 2);
+                ctx.fillRect(6, 2, 12, 3);
+                ctx.fillRect(7, 1, 10, 1);
+                // Face
+                ctx.fillStyle = '#FFD6A0';
+                ctx.fillRect(7, 5, 10, 7);
+                // Eyes
+                ctx.fillStyle = '#222';
+                ctx.fillRect(9, 7, 2, 2);
+                ctx.fillRect(13, 7, 2, 2);
+                // Blush
+                ctx.fillStyle = '#ff9999';
+                ctx.fillRect(8, 9, 2, 1);
+                ctx.fillRect(14, 9, 2, 1);
+                // Smile
+                ctx.fillStyle = '#c0392b';
+                ctx.fillRect(10, 10, 4, 1);
+                // Apron (white over brown)
+                ctx.fillStyle = '#8B6914';
+                ctx.fillRect(5, 12, 14, 6);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(7, 12, 10, 6);
+                ctx.fillStyle = '#ddd';
+                ctx.fillRect(11, 12, 2, 1);
+                // Pants
+                ctx.fillStyle = '#555';
+                ctx.fillRect(6, 18, 5, 4);
+                ctx.fillRect(13, 18, 5, 4);
+                // Shoes
+                ctx.fillStyle = '#333';
+                ctx.fillRect(5, 22, 6, 2);
+                ctx.fillRect(13, 22, 6, 2);
+            },
+            guard() {
+                // Helmet
+                ctx.fillStyle = '#888';
+                ctx.fillRect(6, 0, 12, 3);
+                ctx.fillStyle = '#aaa';
+                ctx.fillRect(7, 0, 10, 2);
+                // Visor
+                ctx.fillStyle = '#666';
+                ctx.fillRect(7, 3, 10, 1);
+                // Face
+                ctx.fillStyle = '#FFD6A0';
+                ctx.fillRect(7, 4, 10, 7);
+                // Stern eyes (angled brows)
+                ctx.fillStyle = '#222';
+                ctx.fillRect(9, 6, 2, 2);
+                ctx.fillRect(13, 6, 2, 2);
+                ctx.fillStyle = '#444';
+                ctx.fillRect(8, 5, 3, 1);
+                ctx.fillRect(13, 5, 3, 1);
+                // Mouth
+                ctx.fillStyle = '#8B5A3A';
+                ctx.fillRect(10, 9, 4, 1);
+                // Armor
+                ctx.fillStyle = '#777';
+                ctx.fillRect(4, 11, 16, 7);
+                ctx.fillStyle = '#999';
+                ctx.fillRect(6, 11, 12, 2);
+                // Cape (red, behind armor)
+                ctx.fillStyle = '#cc2244';
+                ctx.fillRect(3, 12, 2, 8);
+                ctx.fillRect(19, 12, 2, 8);
+                // Belt
+                ctx.fillStyle = '#8B6914';
+                ctx.fillRect(4, 16, 16, 1);
+                // Pants
+                ctx.fillStyle = '#555';
+                ctx.fillRect(6, 18, 5, 4);
+                ctx.fillRect(13, 18, 5, 4);
+                // Boots
+                ctx.fillStyle = '#444';
+                ctx.fillRect(5, 21, 6, 3);
+                ctx.fillRect(13, 21, 6, 3);
+            },
+            king() {
+                // Crown
+                ctx.fillStyle = '#ffd700';
+                ctx.fillRect(6, 0, 12, 1);
+                ctx.fillRect(6, 1, 2, 2);
+                ctx.fillRect(11, 1, 2, 2);
+                ctx.fillRect(16, 1, 2, 2);
+                ctx.fillRect(6, 3, 12, 2);
+                // Jewels on crown
+                ctx.fillStyle = '#cc2244';
+                ctx.fillRect(8, 3, 2, 1);
+                ctx.fillStyle = '#2244cc';
+                ctx.fillRect(14, 3, 2, 1);
+                // Face
+                ctx.fillStyle = '#FFD6A0';
+                ctx.fillRect(7, 5, 10, 7);
+                // Eyes
+                ctx.fillStyle = '#222';
+                ctx.fillRect(9, 7, 2, 2);
+                ctx.fillRect(13, 7, 2, 2);
+                // Beard
+                ctx.fillStyle = '#8B6914';
+                ctx.fillRect(8, 10, 8, 2);
+                ctx.fillRect(9, 12, 6, 1);
+                // Royal robe (purple)
+                ctx.fillStyle = '#6a1b9a';
+                ctx.fillRect(4, 13, 16, 6);
+                // Ermine collar (white with dots)
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(5, 13, 14, 2);
+                ctx.fillStyle = '#222';
+                ctx.fillRect(7, 13, 1, 1);
+                ctx.fillRect(11, 13, 1, 1);
+                ctx.fillRect(15, 13, 1, 1);
+                // Gold belt/sash
+                ctx.fillStyle = '#ffd700';
+                ctx.fillRect(4, 17, 16, 1);
+                // Robe bottom
+                ctx.fillStyle = '#7b1fa2';
+                ctx.fillRect(4, 18, 16, 4);
+                // Gold trim
+                ctx.fillStyle = '#ffd700';
+                ctx.fillRect(4, 21, 16, 1);
+                // Shoes
+                ctx.fillStyle = '#ffd700';
+                ctx.fillRect(6, 22, 5, 2);
+                ctx.fillRect(13, 22, 5, 2);
+            }
+        };
+
+        if (draw[npcId]) draw[npcId]();
+    }
+
+    // ===== AUDIO SYSTEM (8-bit voice blips) =====
+    let audioCtx = null;
+    let muted = false;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playVoiceBlip(basePitch) {
+        if (muted || !audioCtx) return;
+        try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'square';
+            osc.frequency.value = basePitch + (Math.random() * 60 - 30);
+
+            gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.07);
+        } catch(e) { /* silently ignore audio errors */ }
+    }
+
+    function toggleMute() {
+        muted = !muted;
+        const btn = document.getElementById('mute-btn');
+        if (btn) btn.innerHTML = muted ? '&#x1F507;' : '&#x1F50A;';
+    }
+
+    // ===== TYPEWRITER EFFECT =====
+    function typeText(el, text, speed, onComplete) {
+        game.typing = true;
+        game.fullText = text;
+        game.textEl = el;
+        game.onTypeComplete = onComplete || null;
+        el.textContent = '';
+
+        const tapInd = document.getElementById('tap-indicator');
+        if (tapInd) tapInd.style.display = 'none';
+
+        let i = 0;
+        function step() {
+            if (!game.typing) return;
+            if (i < text.length) {
+                el.textContent += text[i];
+                // Voice blip on every 2nd non-space character
+                if (game.currentVoicePitch && text[i] !== ' ' && i % 2 === 0) {
+                    playVoiceBlip(game.currentVoicePitch);
+                }
+                i++;
+                game.typingTimer = setTimeout(step, speed || 28);
+            } else {
+                game.typing = false;
+                if (tapInd) tapInd.style.display = 'block';
+                if (game.onTypeComplete) game.onTypeComplete();
+            }
+        }
+        step();
+    }
+
+    function skipTypewriter() {
+        if (!game.typing) return;
+        clearTimeout(game.typingTimer);
+        game.typing = false;
+        if (game.textEl) game.textEl.textContent = game.fullText;
+        const tapInd = document.getElementById('tap-indicator');
+        if (tapInd) tapInd.style.display = 'block';
+        if (game.onTypeComplete) game.onTypeComplete();
+    }
+
+    // ===== SCREEN TRANSITIONS =====
+    function transition(renderFn) {
+        const overlay = document.getElementById('transition-overlay');
+        overlay.classList.add('active');
+        setTimeout(() => {
+            renderFn();
+            setTimeout(() => {
+                overlay.classList.remove('active');
+            }, 250);
+        }, 300);
+    }
+
+    function setScreen(html) {
+        document.getElementById('screen-content').innerHTML = html;
+    }
+
+    // ===== TITLE SCREEN =====
+    function renderTitle() {
+        setScreen(`
+            <div class="title-screen">
+                <h1 class="game-title">GRAMMAR<br>QUEST</h1>
+                <p class="game-subtitle">The Past Tense Adventure</p>
+                <div class="title-divider"></div>
+                <p class="title-story">
+                    The villagers of Verbton think<br>
+                    YOU are a troublemaker!<br>
+                    <br>
+                    Defend yourself with<br>
+                    perfect grammar!
+                </p>
+                <button class="pixel-btn" onclick="startGame()">
+                    \u25B6 START
+                </button>
+                <p class="title-hint">Tap dialogue to advance text</p>
+            </div>
+        `);
+    }
+
+    // ===== MAP SCREEN =====
+    function renderMap() {
+        const nextIndex = game.completed.indexOf(false);
+        const allDone = nextIndex === -1;
+
+        function nodeHTML(i) {
+            const enc = encounters[i];
+            let stateClass, statusHTML;
+
+            if (game.completed[i]) {
+                stateClass = 'completed';
+                const stars = getStars(game.attempts[i]);
+                statusHTML = `<span class="node-stars">${'\u2605'.repeat(stars)}${'\u2606'.repeat(3 - stars)}</span>`;
+            } else if (i === nextIndex) {
+                stateClass = 'active';
+                statusHTML = `<span class="node-status">Tap to go!</span>`;
+            } else {
+                stateClass = 'locked';
+                statusHTML = `<span class="node-lock">\u{1F512}</span>`;
+            }
+
+            const clickable = (i === nextIndex) ? `onclick="goToEncounter(${i})"` : '';
+
+            return `
+                <div class="map-node ${stateClass}" ${clickable}>
+                    <div class="node-icon">${enc.icon}</div>
+                    <div class="node-info">
+                        <div class="node-label">${enc.location}</div>
+                        ${statusHTML}
+                    </div>
+                </div>
+            `;
+        }
+
+        setScreen(`
+            <div class="map-screen">
+                <div class="map-header">
+                    <h2>~ VERBTON ~</h2>
+                    <p>Choose your next stop</p>
+                </div>
+                <div class="map-content">
+                    ${nodeHTML(3)}
+                    <div class="map-line"></div>
+                    ${nodeHTML(2)}
+                    <div class="map-line"></div>
+                    ${nodeHTML(1)}
+                    <div class="map-line"></div>
+                    ${nodeHTML(0)}
+                </div>
+                <div class="map-footer">
+                    ${allDone
+                        ? '<p style="animation:none;color:#ffd700;">All locations cleared!</p>'
+                        : '<p>Tap the glowing location!</p>'}
+                </div>
+            </div>
+        `);
+
+        if (allDone) {
+            setTimeout(() => { transition(renderVictory); }, 1200);
+        }
+    }
+
+    // ===== ENCOUNTER SCREEN =====
+    function renderEncounter() {
+        const enc = encounters[game.encounterIndex];
+
+        // Shuffle option order randomly
+        game.shuffledOptions = [...enc.options];
+        if (Math.random() > 0.5) {
+            game.shuffledOptions.reverse();
+        }
+
+        setScreen(`
+            <div class="encounter-screen" style="background: ${enc.bgStyle}">
+                <div class="encounter-top">
+                    <canvas id="npc-canvas" class="npc-canvas" width="24" height="24"></canvas>
+                    <div class="npc-nameplate">${enc.npcName}</div>
+                </div>
+                <div class="encounter-bottom">
+                    <div class="dialogue-box" id="dialogue-box" onclick="handleDialogueTap()">
+                        <p id="dialogue-text"></p>
+                        <span id="tap-indicator" class="tap-indicator">\u25BC</span>
+                    </div>
+                    <div id="options-area" class="options-area" style="display:none">
+                        <button class="option-btn" id="opt-0" onclick="event.stopPropagation(); selectOption(0);">
+                            <span class="option-label">A</span>
+                            ${game.shuffledOptions[0].text}
+                        </button>
+                        <button class="option-btn" id="opt-1" onclick="event.stopPropagation(); selectOption(1);">
+                            <span class="option-label">B</span>
+                            ${game.shuffledOptions[1].text}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `);
+
+        // Draw the NPC sprite
+        const canvas = document.getElementById('npc-canvas');
+        if (canvas) drawNPC(canvas, enc.npcId);
+
+        // Set voice pitch for this encounter
+        game.currentVoicePitch = enc.voicePitch || 0;
+
+        // Start first dialogue line
+        game.dialogueIndex = 0;
+        game.phase = 'dialogue';
+        typeNextDialogue();
+    }
+
+    function typeNextDialogue() {
+        const enc = encounters[game.encounterIndex];
+        const text = enc.dialogues[game.dialogueIndex];
+        const textEl = document.getElementById('dialogue-text');
+        if (!textEl) return;
+
+        typeText(textEl, text, 28);
+    }
+
+    function handleDialogueTap() {
+        if (game.inputLocked) return;
+
+        // If currently typing, skip to end
+        if (game.typing) {
+            skipTypewriter();
+            return;
+        }
+
+        if (game.phase === 'dialogue') {
+            advanceDialogue();
+        } else if (game.phase === 'npc-response' || game.phase === 'grammar') {
+            advancePostAnswer();
+        }
+    }
+
+    function advanceDialogue() {
+        const enc = encounters[game.encounterIndex];
+        game.dialogueIndex++;
+
+        if (game.dialogueIndex >= enc.dialogues.length) {
+            // Show answer options
+            game.phase = 'question';
+            const tapInd = document.getElementById('tap-indicator');
+            if (tapInd) tapInd.style.display = 'none';
+
+            const optArea = document.getElementById('options-area');
+            if (optArea) {
+                optArea.style.display = 'flex';
+                optArea.classList.add('fade-in-up');
+            }
+            lockInput(400);
+        } else {
+            typeNextDialogue();
+        }
+    }
+
+    function selectOption(index) {
+        if (game.inputLocked) return;
+        if (game.phase !== 'question') return;
+        lockInput(600);
+
+        const chosen = game.shuffledOptions[index];
+        const enc = encounters[game.encounterIndex];
+        game.attempts[game.encounterIndex]++;
+
+        const btn0 = document.getElementById('opt-0');
+        const btn1 = document.getElementById('opt-1');
+        const otherIndex = index === 0 ? 1 : 0;
+
+        if (chosen.correct) {
+            // CORRECT
+            document.getElementById('opt-' + index).classList.add('correct');
+            document.getElementById('opt-' + otherIndex).classList.add('dimmed');
+
+            setTimeout(() => {
+                // Hide options, show NPC response
+                document.getElementById('options-area').style.display = 'none';
+                game.phase = 'npc-response';
+                const textEl = document.getElementById('dialogue-text');
+                typeText(textEl, enc.npcCorrectResponse, 28);
+            }, 800);
+
+        } else {
+            // WRONG
+            document.getElementById('opt-' + index).classList.add('wrong');
+            document.getElementById('opt-' + otherIndex).classList.add('dimmed');
+
+            setTimeout(() => {
+                // Show NPC wrong response and hint
+                const textEl = document.getElementById('dialogue-text');
+                typeText(textEl, enc.npcWrongResponse, 28, () => {
+                    // After typing, wait then reset options for retry
+                    setTimeout(() => {
+                        btn0.classList.remove('correct', 'wrong', 'dimmed');
+                        btn1.classList.remove('correct', 'wrong', 'dimmed');
+                        game.phase = 'question';
+
+                        // Re-type the accusation question
+                        const lastDialogue = enc.dialogues[enc.dialogues.length - 1];
+                        typeText(textEl, lastDialogue, 28);
+                    }, 1500);
+                });
+            }, 800);
+        }
+    }
+
+    function advancePostAnswer() {
+        if (game.inputLocked) return;
+
+        if (game.phase === 'npc-response') {
+            // Show grammar note
+            game.phase = 'grammar';
+            lockInput(300);
+
+            const enc = encounters[game.encounterIndex];
+            const box = document.getElementById('dialogue-box');
+            box.classList.add('grammar-note-box');
+
+            const textEl = document.getElementById('dialogue-text');
+            const tapInd = document.getElementById('tap-indicator');
+            if (tapInd) tapInd.style.display = 'none';
+
+            // Build grammar note content
+            textEl.innerHTML = '<strong>\u{1F4DD} ' + enc.grammarTitle + '</strong><br><br>' +
+                enc.grammarLines.map(line => {
+                    if (line.startsWith('\u2713')) return '<span style="color:#2a7a2a">' + line + '</span>';
+                    if (line.startsWith('\u2717')) return '<span style="color:#aa2222;text-decoration:line-through">' + line + '</span>';
+                    if (line === '') return '<br>';
+                    return line;
+                }).join('<br>');
+
+            // Show continue button after a beat
+            setTimeout(() => {
+                const optArea = document.getElementById('options-area');
+                if (optArea) {
+                    optArea.innerHTML = `
+                        <button class="continue-btn" onclick="event.stopPropagation(); completeEncounter();">
+                            \u25B6 Continue
+                        </button>
+                    `;
+                    optArea.style.display = 'flex';
+                    optArea.classList.add('fade-in-up');
+                }
+            }, 600);
+
+        }
+    }
+
+    function completeEncounter() {
+        game.completed[game.encounterIndex] = true;
+        game.currentVoicePitch = 0;
+        transition(renderMap);
+    }
+
+    // ===== VICTORY SCREEN =====
+    function renderVictory() {
+        let resultsHTML = '';
+        encounters.forEach((enc, i) => {
+            const stars = getStars(game.attempts[i]);
+            resultsHTML += `
+                <div class="result-row">
+                    <span class="result-location">${enc.icon} ${enc.location}</span>
+                    <span class="result-stars">${'\u2605'.repeat(stars)}${'\u2606'.repeat(3 - stars)}</span>
+                </div>
+            `;
+        });
+
+        setScreen(`
+            <div class="victory-screen">
+                <div class="victory-title">\u{1F3C6} QUEST COMPLETE!</div>
+                <p class="victory-subtitle">You survived Verbton!</p>
+
+                <div class="results-list">
+                    ${resultsHTML}
+                </div>
+
+                <div class="grammar-recap">
+                    <h3>\u{1F4DD} REMEMBER</h3>
+                    <p class="rule">PAST TENSE HELPER + BASE FORM</p>
+                    <p class="examples">
+                        <span class="correct">\u2713 didn't take</span>&nbsp;&nbsp;
+                        <span class="wrong">\u2717 didn't took</span><br>
+                        <span class="correct">\u2713 did eat</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                        <span class="wrong">\u2717 did ate</span><br>
+                        <span class="correct">\u2713 didn't break</span>&nbsp;
+                        <span class="wrong">\u2717 didn't broke</span><br>
+                        <span class="correct">\u2713 couldn't see</span>&nbsp;
+                        <span class="wrong">\u2717 couldn't saw</span>
+                    </p>
+                </div>
+
+                <button class="pixel-btn" onclick="restartGame()">
+                    PLAY AGAIN
+                </button>
+            </div>
+        `);
+    }
+
+    // ===== UTILITY =====
+    function getStars(attempts) {
+        if (attempts <= 1) return 3;
+        if (attempts === 2) return 2;
+        return 1;
+    }
+
+    // ===== GAME FLOW =====
+    function startGame() {
+        initAudio();
+        lockInput(300);
+        transition(renderMap);
+    }
+
+    function goToEncounter(index) {
+        if (game.inputLocked) return;
+        lockInput(300);
+        game.encounterIndex = index;
+        game.attempts[index] = 0;
+        transition(renderEncounter);
+    }
+
+    function restartGame() {
+        lockInput(300);
+        game.completed = [false, false, false, false];
+        game.attempts = [0, 0, 0, 0];
+        game.encounterIndex = -1;
+        transition(renderTitle);
+    }
+
+    // ===== PARENT SCOREBOARD BRIDGE =====
+    // Receive the player's display name from the parent site; post final
+    // score back when the victory screen is reached.
+    const SITE = { name: null };
+    window.addEventListener('message', (ev) => {
+      if (ev && ev.data && ev.data.type === 'esl:player-name' && typeof ev.data.name === 'string') {
+        SITE.name = ev.data.name.slice(0, 15);
+      }
+    });
+    try { window.parent && window.parent.postMessage({ type: 'esl:ready', game: 'grammar-quest' }, '*'); } catch (e) {}
+
+    const _origRenderVictory = renderVictory;
+    renderVictory = function() {
+      let total = 0;
+      for (let i = 0; i < encounters.length; i++) total += getStars(game.attempts[i]);
+      try {
+        window.parent && window.parent.postMessage({
+          type: 'esl:score',
+          game: 'grammar-quest',
+          score: total,
+          max: encounters.length * 3,
+          name: SITE.name || null,
+        }, '*');
+      } catch (e) {}
+      return _origRenderVictory.apply(this, arguments);
+    };
+
+    // ===== INIT =====
+    function init() {
+        renderTitle();
+    }
+
+    // Start when fonts are ready (or after timeout)
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(init);
+    } else {
+        window.addEventListener('load', init);
+    }
+
+    </script>
+</body>
+</html>

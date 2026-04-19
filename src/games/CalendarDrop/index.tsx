@@ -9,6 +9,7 @@ import { useUser } from '../../lib/user-context';
 import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
 import { ITEMS, type CalendarItem, type CalendarPrep } from '../../content/calendar';
 import { GAME_BG } from '../../lib/game-bg';
+import { sfx } from '../../lib/sfx';
 
 const SCORES_KEY = 'calendar:scoreboard';
 const ROUND_MS = 60_000;
@@ -162,9 +163,11 @@ export default function CalendarDrop() {
         return next;
       });
       setFlash({ kind: 'right', text: `${prep} ${current.text}` });
+      sfx('correct');
     } else {
       setStreak(0);
       setFlash({ kind: 'wrong', text: `${current.prep} ${current.text}`, note: current.note });
+      sfx('wrong');
     }
     setLog((l) => [
       ...l,
@@ -186,6 +189,7 @@ export default function CalendarDrop() {
         setScores(list);
         setJustAdded(entry);
       }
+      sfx(finalScore >= 10 ? 'win' : 'fail');
       return finalScore;
     });
   }

@@ -10,6 +10,7 @@ import { shuffle } from '../../lib/shuffle';
 import { useUser } from '../../lib/user-context';
 import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
 import { GAME_BG } from '../../lib/game-bg';
+import { sfx } from '../../lib/sfx';
 import { ITEMS, ROUND_SIZE, type CheckoutItem } from '../../content/checkout';
 
 const RESUME_KEY = 'checkout:state';
@@ -97,6 +98,7 @@ export default function SupermarketCheckout() {
     setSortAnswers((prev) => [...prev, { id: item.id, pickedCountable: binCountable, correct }]);
     setLastPick({ kind: 'sort', correct });
     setPhase('phase1-feedback');
+    sfx(correct ? 'correct' : 'wrong');
   }
 
   function advancePhase1() {
@@ -116,6 +118,7 @@ export default function SupermarketCheckout() {
     setQuestionAnswers((prev) => [...prev, { id: item.id, pickedMuch: much, correct }]);
     setLastPick({ kind: 'question', correct });
     setPhase('phase2-feedback');
+    sfx(correct ? 'correct' : 'wrong');
   }
 
   function advancePhase2() {
@@ -130,6 +133,7 @@ export default function SupermarketCheckout() {
       }
       removeKey(RESUME_KEY);
       setPhase('results');
+      sfx(total >= Math.ceil(MAX_SCORE * 0.7) ? 'win' : 'fail');
     } else {
       setIdx(idx + 1);
       setPhase('phase2');

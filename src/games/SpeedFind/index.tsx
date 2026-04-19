@@ -9,6 +9,7 @@ import { useUser } from '../../lib/user-context';
 import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
 import { TEXTS, parseBody, type SpeedFindText, type SpeedFindKind } from '../../content/speedfind';
 import { GAME_BG } from '../../lib/game-bg';
+import { sfx } from '../../lib/sfx';
 
 const SCORES_KEY = 'speedfind:scoreboard';
 const ROUND_MS = 30_000;
@@ -92,6 +93,7 @@ export default function SpeedFind() {
         setScores(list);
         setJustAdded(entry);
       }
+      sfx(s >= 10 ? 'win' : 'fail');
       return s;
     });
   }
@@ -106,11 +108,13 @@ export default function SpeedFind() {
         ...l,
         { id: entry.id, question: entry.question, correct: true, wrongTaps: wrongTapsThisText },
       ]);
+      sfx('correct');
       advance();
     } else {
       // wrong: -3s
       penaltyRef.current += WRONG_PENALTY_MS;
       setWrongTapsThisText((w) => w + 1);
+      sfx('wrong');
     }
   }
 

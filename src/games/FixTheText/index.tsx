@@ -10,6 +10,7 @@ import { useUser } from '../../lib/user-context';
 import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
 import { TEXTS, parseParagraph, applyCase, type FixTextEntry } from '../../content/fixtext';
 import { GAME_BG } from '../../lib/game-bg';
+import { sfx } from '../../lib/sfx';
 
 const RESUME_KEY = 'fixtext:state';
 const SCORES_KEY = 'fixtext:scoreboard';
@@ -77,10 +78,12 @@ export default function FixTheText() {
 
   function toggleCap(i: number) {
     setCaps((c) => c.map((v, idx) => (idx === i ? !v : v)));
+    sfx('tap');
   }
 
   function togglePeriod(i: number) {
     setPeriods((p) => p.map((v, idx) => (idx === i ? !v : v)));
+    sfx('tap');
   }
 
   function check() {
@@ -97,6 +100,7 @@ export default function FixTheText() {
       setJustAdded(entry);
     }
     removeKey(RESUME_KEY);
+    sfx(pct === 100 ? 'win' : pct >= 70 ? 'correct' : 'wrong');
   }
 
   function tryAgain() {
