@@ -20,7 +20,7 @@ import type { ScoreEntry } from './scoreboard';
 // ⇩ PASTE YOUR APPS SCRIPT WEB APP URL HERE ⇩
 // Format: https://script.google.com/macros/s/XXXXXXXXX/exec
 // Leave empty string to stay local-only.
-export const SCOREBOARD_URL = '';
+export const SCOREBOARD_URL = 'https://script.google.com/macros/s/AKfycbzfJaPJ2bYfNtZXJrtBfcmWF0QhPA7_5cl19hGZUHCSx-N16tO-eAJZSOaoOdd-Ux6D/exec';
 
 /** Local storage key → the allowlisted remote game key on the backend.
  *  Keep in sync with GAMES in `scoreboard-backend/Code.gs`. */
