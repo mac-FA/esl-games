@@ -7,6 +7,7 @@ import Scoreboard from '../../components/Scoreboard';
 import { shuffle } from '../../lib/shuffle';
 import { useUser } from '../../lib/user-context';
 import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
+import { fetchRemoteTop, submitRemoteScore } from '../../lib/remote-scoreboard';
 import { ITEMS, type CalendarItem, type CalendarPrep } from '../../content/calendar';
 import { GAME_BG } from '../../lib/game-bg';
 import { sfx } from '../../lib/sfx';
@@ -73,6 +74,14 @@ export default function CalendarDrop() {
     return () => {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchRemoteTop(SCORES_KEY).then((remote) => {
+      if (!cancelled && remote) setScores(remote);
+    });
+    return () => { cancelled = true; };
   }, []);
 
   function startRound() {
@@ -188,6 +197,9 @@ export default function CalendarDrop() {
         const { list } = addScore(SCORES_KEY, entry);
         setScores(list);
         setJustAdded(entry);
+        submitRemoteScore(SCORES_KEY, entry).then((remote) => {
+          if (remote) setScores(remote);
+        });
       }
       sfx(finalScore >= 10 ? 'win' : 'fail');
       return finalScore;

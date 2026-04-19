@@ -5,6 +5,7 @@ import HintText from '../components/HintText';
 import Scoreboard from '../components/Scoreboard';
 import { useUser } from '../lib/user-context';
 import { addScore, loadScoreboard, type ScoreEntry } from '../lib/scoreboard';
+import { fetchRemoteTop, submitRemoteScore } from '../lib/remote-scoreboard';
 
 /**
  * Hosts one of the legacy single-file HTML games (Dave's Day, Grammar Quest)
@@ -40,6 +41,15 @@ export default function LegacyFrame({ file, gameId, scoresKey, title, titleJa, m
   // Build iframe src with BASE_URL so GitHub Pages serves it correctly.
   const src = `${import.meta.env.BASE_URL}legacy/${file}`;
 
+  // Pull shared leaderboard from the remote backend (if configured).
+  useEffect(() => {
+    let cancelled = false;
+    fetchRemoteTop(scoresKey).then((remote) => {
+      if (!cancelled && remote) setScores(remote);
+    });
+    return () => { cancelled = true; };
+  }, [scoresKey]);
+
   useEffect(() => {
     function onMessage(ev: MessageEvent) {
       const data = ev.data;
@@ -73,6 +83,9 @@ export default function LegacyFrame({ file, gameId, scoresKey, title, titleJa, m
         const { list } = addScore(scoresKey, entry);
         setScores(list);
         setJustAdded(entry);
+        submitRemoteScore(scoresKey, entry).then((remote) => {
+          if (remote) setScores(remote);
+        });
       }
     }
     window.addEventListener('message', onMessage);

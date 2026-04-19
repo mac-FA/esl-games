@@ -10,6 +10,7 @@ import { loadJSON, saveJSON, removeKey } from '../../lib/storage';
 import { shuffle } from '../../lib/shuffle';
 import { useUser } from '../../lib/user-context';
 import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
+import { fetchRemoteTop, submitRemoteScore } from '../../lib/remote-scoreboard';
 import { GAME_BG } from '../../lib/game-bg';
 import { sfx } from '../../lib/sfx';
 import {
@@ -88,6 +89,15 @@ export default function SentenceMashup() {
   const [scores, setScores] = useState<ScoreEntry[]>(() => loadScoreboard(SCORES_KEY));
   const [justAdded, setJustAdded] = useState<ScoreEntry | undefined>(undefined);
 
+  // On mount: pull shared scoreboard from the remote backend (if configured).
+  useEffect(() => {
+    let cancelled = false;
+    fetchRemoteTop(SCORES_KEY).then((remote) => {
+      if (!cancelled && remote) setScores(remote);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   // On mount: check for saved in-progress round.
   useEffect(() => {
     const saved = loadJSON<SavedState | null>(RESUME_KEY, null);
@@ -148,6 +158,9 @@ export default function SentenceMashup() {
         const { list } = addScore(SCORES_KEY, entry);
         setScores(list);
         setJustAdded(entry);
+        submitRemoteScore(SCORES_KEY, entry).then((remote) => {
+          if (remote) setScores(remote);
+        });
       }
       removeKey(RESUME_KEY);
       setPhase('results');

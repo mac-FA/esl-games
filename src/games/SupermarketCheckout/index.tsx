@@ -9,6 +9,7 @@ import { loadJSON, saveJSON, removeKey } from '../../lib/storage';
 import { shuffle } from '../../lib/shuffle';
 import { useUser } from '../../lib/user-context';
 import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
+import { fetchRemoteTop, submitRemoteScore } from '../../lib/remote-scoreboard';
 import { GAME_BG } from '../../lib/game-bg';
 import { sfx } from '../../lib/sfx';
 import { ITEMS, ROUND_SIZE, type CheckoutItem } from '../../content/checkout';
@@ -53,6 +54,14 @@ export default function SupermarketCheckout() {
   const [scores, setScores] = useState<ScoreEntry[]>(() => loadScoreboard(SCORES_KEY));
   const [justAdded, setJustAdded] = useState<ScoreEntry | undefined>(undefined);
   const [lastPick, setLastPick] = useState<{ kind: 'sort' | 'question'; correct: boolean; extra?: boolean } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchRemoteTop(SCORES_KEY).then((remote) => {
+      if (!cancelled && remote) setScores(remote);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     const saved = loadJSON<SavedState | null>(RESUME_KEY, null);
@@ -130,6 +139,9 @@ export default function SupermarketCheckout() {
         const { list } = addScore(SCORES_KEY, entry);
         setScores(list);
         setJustAdded(entry);
+        submitRemoteScore(SCORES_KEY, entry).then((remote) => {
+          if (remote) setScores(remote);
+        });
       }
       removeKey(RESUME_KEY);
       setPhase('results');

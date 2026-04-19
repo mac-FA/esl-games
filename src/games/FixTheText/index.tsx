@@ -8,6 +8,7 @@ import { loadJSON, saveJSON, removeKey } from '../../lib/storage';
 import { shuffle } from '../../lib/shuffle';
 import { useUser } from '../../lib/user-context';
 import { addScore, loadScoreboard, type ScoreEntry } from '../../lib/scoreboard';
+import { fetchRemoteTop, submitRemoteScore } from '../../lib/remote-scoreboard';
 import { TEXTS, parseParagraph, applyCase, type FixTextEntry } from '../../content/fixtext';
 import { GAME_BG } from '../../lib/game-bg';
 import { sfx } from '../../lib/sfx';
@@ -40,6 +41,14 @@ export default function FixTheText() {
 
   const entry: FixTextEntry | undefined = order[orderIdx];
   const parsed = useMemo(() => (entry ? parseParagraph(entry.correct) : null), [entry]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchRemoteTop(SCORES_KEY).then((remote) => {
+      if (!cancelled && remote) setScores(remote);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     const saved = loadJSON<SavedState | null>(RESUME_KEY, null);
@@ -98,6 +107,9 @@ export default function FixTheText() {
       const { list } = addScore(SCORES_KEY, entry);
       setScores(list);
       setJustAdded(entry);
+      submitRemoteScore(SCORES_KEY, entry).then((remote) => {
+        if (remote) setScores(remote);
+      });
     }
     removeKey(RESUME_KEY);
     sfx(pct === 100 ? 'win' : pct >= 70 ? 'correct' : 'wrong');
