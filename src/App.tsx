@@ -138,7 +138,7 @@ function Home() {
     <>
       <div className="home-backdrop" aria-hidden="true" style={HOME_BG_STYLE} />
       <main className="home-shell">
-        <header className="flex items-start justify-between gap-3 mb-3">
+        <header className="home-header flex items-start justify-between gap-3 mb-3">
           <div>
             <h1 className="home-title text-[28px]">English Practice Games</h1>
             <p className="home-level mt-1">Level A1–A2</p>
