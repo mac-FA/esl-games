@@ -1,5 +1,35 @@
 @import "tailwindcss";
 
+/* ---------- Garden palette + typography ----------
+ * Palette picked from the watercolor garden illustration. Exposed as CSS
+ * custom properties so individual components (and Tailwind v4 arbitrary
+ * values) can reference them without hardcoding hex. The fonts are loaded
+ * in index.html; here we just alias them. */
+:root {
+  --sage: #6b8f6a;
+  --sage-deep: #4f6f52;
+  --honey: #d9a44a;
+  --petal: #d98aa6;
+  --ink: #2f3a33;
+  --ink-soft: #5b6a5f;
+  --paper: #fbf6ec;
+  --paper-edge: #e8dec9;
+  --mist: #f2efe4;
+
+  --font-serif: 'Lora', Georgia, serif;
+  --font-sans: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+
+  --radius-card: 18px;
+  --shadow-card:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 12px 30px -16px rgba(47, 58, 51, 0.35),
+    0 3px 8px -4px rgba(47, 58, 51, 0.25);
+  --shadow-card-hover:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 18px 36px -18px rgba(47, 58, 51, 0.4),
+    0 4px 10px -4px rgba(47, 58, 51, 0.25);
+}
+
 html,
 body,
 #root {
@@ -7,14 +37,288 @@ body,
 }
 
 body {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, sans-serif;
+  font-family: var(--font-sans), 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', Meiryo, sans-serif;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
-  background: #f8fafc;
-  color: #0f172a;
+  background: var(--mist);
+  color: var(--ink);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
 }
 
 button {
   touch-action: manipulation;
+}
+
+/* ---------- Home-only garden theme ----------
+ * All of these rules are scoped under `.home` so the in-game screens keep
+ * their current look. The backdrop is fixed-position so the foliage frames
+ * scrolling content on phones; on wider screens it behaves as a centered
+ * "column" with mist-faded sides. */
+.home-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(242, 239, 228, 0) 40%, rgba(242, 239, 228, 0.85) 100%),
+    var(--home-bg-url) center top / cover no-repeat;
+}
+
+@media (min-width: 780px) {
+  .home-backdrop {
+    background:
+      linear-gradient(180deg, rgba(242, 239, 228, 0) 55%, rgba(242, 239, 228, 0.9) 100%),
+      var(--home-bg-url) center top / auto 100% no-repeat;
+  }
+  .home-backdrop::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      var(--mist) 0%,
+      rgba(242, 239, 228, 0) 18%,
+      rgba(242, 239, 228, 0) 82%,
+      var(--mist) 100%
+    );
+  }
+}
+
+.home-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 28px 16px 60px;
+}
+
+.home-title {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  line-height: 1.1;
+}
+.home-level {
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.home-greet {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.home-greet b {
+  color: var(--ink);
+  font-weight: 700;
+}
+.home-greet button {
+  color: var(--sage-deep);
+  border-bottom: 1px dotted var(--sage);
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Intro — italic serif, centered, flanked by sage dots. */
+.home-intro {
+  margin: 22px 0 16px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 15px;
+  text-align: center;
+  text-wrap: pretty;
+}
+.home-intro::before,
+.home-intro::after {
+  content: '·';
+  margin: 0 10px;
+  color: var(--sage);
+}
+
+/* ---------- Cards (botanical variant from the mockup) ---------- */
+.home-card {
+  position: relative;
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: var(--paper);
+  border: 1px solid rgba(107, 143, 106, 0.35);
+  border-radius: var(--radius-card);
+  padding: 16px 16px 14px;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  isolation: isolate;
+}
+.home-card:hover,
+.home-card:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+.home-card:focus-visible {
+  outline: 2px solid var(--sage);
+  outline-offset: 3px;
+}
+
+/* Botanical inked top border. */
+.home-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--sage) 20%,
+    var(--sage) 80%,
+    transparent
+  );
+  opacity: 0.5;
+  border-radius: 0 0 2px 2px;
+}
+
+.home-card-title {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  letter-spacing: -0.005em;
+}
+.home-card-title .emoji {
+  font-size: 20px;
+  filter: saturate(0.95);
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+}
+.home-card-ja {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--sage-deep);
+  white-space: nowrap;
+  opacity: 0.9;
+}
+.home-card-sub {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin: 6px 0 2px;
+  font-family: var(--font-serif);
+}
+/* Highlighted keywords in the subtitle (e.g. "and / but / because"). */
+.home-card-sub em {
+  font-style: normal;
+  color: #8a6a1a;
+  font-weight: 600;
+  background: linear-gradient(180deg, transparent 62%, rgba(217, 164, 74, 0.25) 62%);
+  padding: 0 2px;
+}
+.home-card-meta {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.home-card-meta .dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--sage);
+  display: inline-block;
+}
+
+/* Polaroid art slot. */
+.home-card-art {
+  margin-top: 12px;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--mist);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 4px 10px -6px rgba(47, 58, 51, 0.35);
+  position: relative;
+}
+.home-card-art > * {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* "Play →" pill. Subtle at rest, crisp on hover/focus. Always at least
+ * slightly visible so touch users see the affordance. */
+.home-card-play {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 6px 10px;
+  border-radius: 999px;
+  opacity: 0.6;
+  transform: translateY(0);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.home-card:hover .home-card-play,
+.home-card:focus-visible .home-card-play {
+  opacity: 1;
+}
+
+/* Footer leaf. */
+.home-footer {
+  text-align: center;
+  margin-top: 28px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* Language pill — restyled JapaneseHintToggle for the garden theme. */
+.home-lang-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(251, 246, 236, 0.8);
+  border: 1px solid var(--paper-edge);
+  border-radius: 999px;
+  padding: 3px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  backdrop-filter: blur(6px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 2px 8px -4px rgba(47, 58, 51, 0.2);
+}
+.home-lang-pill span {
+  padding: 5px 11px;
+  border-radius: 999px;
+  color: var(--ink-soft);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.home-lang-pill span.on {
+  background: var(--ink);
+  color: var(--paper);
 }

@@ -1,9 +1,30 @@
 import { useHints } from '../lib/hint-context';
 
-type Props = { className?: string };
+type Props = {
+  className?: string;
+  /** "default" = slate rounded toggle used in-game.
+   *  "pill"    = garden-theme EN/JA pill used on the home screen. */
+  variant?: 'default' | 'pill';
+};
 
-export default function JapaneseHintToggle({ className = '' }: Props) {
+export default function JapaneseHintToggle({ className = '', variant = 'default' }: Props) {
   const { hintsOn, toggle } = useHints();
+
+  if (variant === 'pill') {
+    return (
+      <button
+        type="button"
+        onClick={toggle}
+        aria-pressed={hintsOn}
+        aria-label={hintsOn ? 'Turn off Japanese hints' : 'Turn on Japanese hints'}
+        className={`home-lang-pill ${className}`}
+      >
+        <span className={hintsOn ? '' : 'on'}>EN</span>
+        <span className={hintsOn ? 'on' : ''}>日本語</span>
+      </button>
+    );
+  }
+
   return (
     <button
       type="button"
