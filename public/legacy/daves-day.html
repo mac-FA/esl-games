@@ -311,16 +311,65 @@ function goStory(){initAudio();S.level=0;S.stars=[];renderStory();}
 function startLevel(){
   const lv=LEVELS[S.level];
   S.lives=3;S.collected=0;S.px=3;S.py=6;
-  // Place items randomly
-  const used=new Set();used.add(S.px+','+S.py);
-  S.items=lv.items.map((emoji,i)=>{
-    let x,y;
-    do{x=Math.floor(Math.random()*COLS);y=Math.floor(Math.random()*ROWS);}
-    while(used.has(x+','+y));
-    used.add(x+','+y);
-    return{id:i,emoji,x,y,collected:false};
-  });
+  S.items=placeItemsSafely(lv.items,S.px,S.py);
   renderPlay();
+}
+
+// Place items on random cells, but only accept layouts where every item is
+// reachable in order without stepping on a future item. Rule recap:
+// - Stepping on the current target collects it; that cell is now empty.
+// - Stepping on any *other* uncollected item costs a life.
+// So when Dave is chasing item k, the obstacles are items k+1..end. We BFS
+// each leg from the previous pickup (or the starting cell, for k=0) to the
+// target, treating future items as walls. If any leg is blocked — typically
+// because the target landed in a corner ringed by wrong items — we re-roll.
+function placeItemsSafely(emojis,startX,startY){
+  const MAX_ATTEMPTS=200;
+  for(let a=0;a<MAX_ATTEMPTS;a++){
+    const used=new Set();used.add(startX+','+startY);
+    const items=emojis.map((emoji,i)=>{
+      let x,y;
+      do{x=Math.floor(Math.random()*COLS);y=Math.floor(Math.random()*ROWS);}
+      while(used.has(x+','+y));
+      used.add(x+','+y);
+      return{id:i,emoji,x,y,collected:false};
+    });
+    if(allLegsReachable(items,startX,startY))return items;
+  }
+  // Vanishingly unlikely fallback: a guaranteed-safe column down the right
+  // edge in story order. Dave can always reach (7,0) from (3,6) and then
+  // walk straight down, never crossing a future item.
+  return emojis.map((emoji,i)=>({id:i,emoji,x:COLS-1,y:i,collected:false}));
+}
+
+function allLegsReachable(items,startX,startY){
+  let cx=startX,cy=startY;
+  for(let k=0;k<items.length;k++){
+    const obstacles=new Set();
+    for(let j=k+1;j<items.length;j++)obstacles.add(items[j].x+','+items[j].y);
+    if(!bfsReachable(cx,cy,items[k].x,items[k].y,obstacles))return false;
+    cx=items[k].x;cy=items[k].y;
+  }
+  return true;
+}
+
+function bfsReachable(sx,sy,tx,ty,obstacles){
+  if(sx===tx&&sy===ty)return true;
+  const seen=new Set();seen.add(sx+','+sy);
+  const q=[[sx,sy]];
+  while(q.length){
+    const[x,y]=q.shift();
+    const ns=[[x+1,y],[x-1,y],[x,y+1],[x,y-1]];
+    for(const[nx,ny]of ns){
+      if(nx<0||nx>=COLS||ny<0||ny>=ROWS)continue;
+      const k=nx+','+ny;
+      if(seen.has(k))continue;
+      if(nx===tx&&ny===ty)return true;
+      if(obstacles.has(k))continue;
+      seen.add(k);q.push([nx,ny]);
+    }
+  }
+  return false;
 }
 
 function move(dx,dy){
